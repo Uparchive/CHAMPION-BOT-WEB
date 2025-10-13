@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 Como Usar - Champion Bot Web</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 100%);
+            color: #ffffff;
+            padding: 40px 20px;
+            line-height: 1.8;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(22, 33, 62, 0.9);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+        h1 {
+            text-align: center;
+            font-size: 42px;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #8338ec, #06ffa5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .subtitle {
+            text-align: center;
+            color: #a8dadc;
+            margin-bottom: 40px;
+            font-size: 18px;
+        }
+        .step {
+            background: rgba(26, 26, 62, 0.8);
+            padding: 25px;
+            margin: 20px 0;
+            border-radius: 15px;
+            border-left: 5px solid #00ff88;
+        }
+        .step h2 {
+            color: #00ff88;
+            margin-bottom: 15px;
+            font-size: 24px;
+        }
+        .step p {
+            color: #a8dadc;
+            margin-bottom: 10px;
+        }
+        .code {
+            background: #0f0f23;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Consolas', monospace;
+            color: #00ff88;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+        .warning {
+            background: rgba(255, 190, 11, 0.2);
+            border-left-color: #ffbe0b;
+            border: 2px solid #ffbe0b;
+        }
+        .warning h2 {
+            color: #ffbe0b;
+        }
+        .success {
+            background: rgba(0, 255, 136, 0.2);
+            border-left-color: #00ff88;
+            border: 2px solid #00ff88;
+        }
+        .btn {
+            display: inline-block;
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #00ff88, #00d16f);
+            color: #000;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: bold;
+            margin: 10px 10px 10px 0;
+            transition: transform 0.3s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        .links {
+            text-align: center;
+            margin-top: 40px;
+        }
+        ul {
+            margin-left: 25px;
+            color: #a8dadc;
+        }
+        ul li {
+            margin: 8px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚡ Champion Bot Web</h1>
+        <p class="subtitle">Guia Rápido de Início</p>
+
+        <div class="step">
+            <h2>📋 Passo 1: Obter API Token</h2>
+            <p>Você precisa de um token de API da Deriv para usar o bot:</p>
+            <ol>
+                <li>Acesse: <strong>https://app.deriv.com/account/api-token</strong></li>
+                <li>Faça login na sua conta Deriv</li>
+                <li>Clique em <strong>"Criar"</strong> para gerar um novo token</li>
+                <li>Marque as permissões necessárias:</li>
+            </ol>
+            <ul>
+                <li>✅ <strong>Read</strong> - Para ler dados da conta</li>
+                <li>✅ <strong>Trade</strong> - Para executar operações</li>
+                <li>✅ <strong>Payments</strong> - Para processar pagamentos</li>
+            </ul>
+            <p>Copie o token gerado e guarde em local seguro!</p>
+        </div>
+
+        <div class="step">
+            <h2>🖥️ Passo 2: Abrir a Plataforma</h2>
+            <p>Abra o arquivo <strong>index.html</strong> no seu navegador:</p>
+            <div class="code">
+                # Windows Explorer:
+                Clique duas vezes em "index.html"
+                
+                # Ou pelo navegador:
+                Arquivo → Abrir → Selecione "index.html"
+            </div>
+        </div>
+
+        <div class="step">
+            <h2>⚙️ Passo 3: Configurar o Bot</h2>
+            <p>Na plataforma, configure suas preferências:</p>
+            <ul>
+                <li><strong>API Token:</strong> Cole o token que você obteve</li>
+                <li><strong>App ID:</strong> Deixe 1089 (padrão da Deriv)</li>
+                <li><strong>Ativo:</strong> Escolha um (recomendado: R_10)</li>
+                <li><strong>Stake:</strong> Ajuste entre 0.5-5% do saldo</li>
+                <li><strong>Max Loss:</strong> Defina perda máxima diária (5-20%)</li>
+            </ul>
+            <p>💡 <strong>Dica:</strong> Marque "💾 Lembrar meu token" para não precisar digitar toda vez!</p>
+        </div>
+
+        <div class="step">
+            <h2>🚀 Passo 4: Iniciar Trading</h2>
+            <p>Clique no botão verde <strong>"▶ INICIAR BOT"</strong></p>
+            <p>O bot irá:</p>
+            <ol>
+                <li>Conectar ao WebSocket da Deriv</li>
+                <li>Autenticar com seu token</li>
+                <li>Obter saldo da conta</li>
+                <li>Iniciar análises a cada 30 segundos</li>
+            </ol>
+        </div>
+
+        <div class="step">
+            <h2>📊 Passo 5: Acompanhar Resultados</h2>
+            <p>Monitore em tempo real:</p>
+            <ul>
+                <li><strong>Dashboard:</strong> Saldo, lucro, win rate, total de trades</li>
+                <li><strong>Logs:</strong> Análises técnicas detalhadas</li>
+                <li><strong>Sinais:</strong> CALL/PUT com score e confiança</li>
+                <li><strong>Resultados:</strong> Vitórias/derrotas com lucro</li>
+            </ul>
+        </div>
+
+        <div class="step warning">
+            <h2>⚠️ Avisos Importantes</h2>
+            <ul>
+                <li>🧪 <strong>Teste em conta DEMO primeiro!</strong></li>
+                <li>💰 Nunca invista mais do que pode perder</li>
+                <li>📉 Estratégia Champion é rigorosa (muitas análises recusadas é normal)</li>
+                <li>🔄 Após 10 recusas, o bot muda automaticamente para outro ativo</li>
+                <li>🛑 Stop loss automático ao atingir perda máxima diária</li>
+            </ul>
+        </div>
+
+        <div class="step success">
+            <h2>✅ Estratégia Champion</h2>
+            <p><strong>Sistema de Scoring (0-3 pontos):</strong></p>
+            <ul>
+                <li><strong>Critério 1:</strong> Tendência das SMAs (5/10/20)</li>
+                <li><strong>Critério 2:</strong> RSI (14) - sobrevenda/sobrecompra</li>
+                <li><strong>Critério 3:</strong> Confirmação de preço</li>
+            </ul>
+            <p>✨ <strong>Mínimo 2/3 pontos</strong> para gerar sinal</p>
+            <p>🎯 <strong>Confiança ≥ 66%</strong> para executar trade</p>
+        </div>
+
+        <div class="step">
+            <h2>📁 Arquivos do Projeto</h2>
+            <ul>
+                <li><strong>index.html</strong> - Interface principal</li>
+                <li><strong>style.css</strong> - Estilos e tema dark</li>
+                <li><strong>bot.js</strong> - Lógica de trading</li>
+                <li><strong>config.js</strong> - Configurações e referência</li>
+                <li><strong>README.md</strong> - Documentação completa</li>
+            </ul>
+        </div>
+
+        <div class="links">
+            <a href="index.html" class="btn">🚀 ABRIR BOT</a>
+            <a href="https://app.deriv.com/account/api-token" class="btn" target="_blank">🔑 OBTER TOKEN</a>
+            <a href="README.md" class="btn" target="_blank">📖 LER DOCS</a>
+        </div>
+
+        <p style="text-align: center; margin-top: 40px; color: #a8dadc;">
+            ⚡ Champion Bot Web v1.0 | Desenvolvido para Trading Profissional 🚀
+        </p>
+    </div>
+</body>
+</html>

@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚡ Champion Bot Web - Trading Platform</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- 🆕 jsPDF para exportar PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+    <!-- Modal de Configurações -->
+    <div id="configModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>⚙️ Configurações do Bot</h2>
+                <span class="close-btn" onclick="closeConfig()">&times;</span>
+            </div>
+            
+            <div class="modal-body">
+                <!-- Seletor de Tipo de Conta -->
+                <div class="config-section">
+                    <h3>💼 Tipo de Conta</h3>
+                    <div class="account-selector">
+                        <button class="account-btn demo active" onclick="selectAccountType('demo')">
+                            <span class="account-icon">🧪</span>
+                            <span>DEMO</span>
+                        </button>
+                        <button class="account-btn real" onclick="selectAccountType('real')">
+                            <span class="account-icon">💰</span>
+                            <span>REAL</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Credenciais -->
+                <div class="config-section">
+                    <h3>🔑 Credenciais da Conta</h3>
+                    <div class="form-group">
+                        <label for="apiTokenDemo">🔐 API Token <span class="account-label demo-label">DEMO</span></label>
+                        <input type="password" id="apiTokenDemo" placeholder="Cole seu token DEMO da Deriv aqui">
+                    </div>
+                    <div class="form-group">
+                        <label for="apiTokenReal">🔐 API Token <span class="account-label real-label">REAL</span></label>
+                        <input type="password" id="apiTokenReal" placeholder="Cole seu token REAL da Deriv aqui">
+                    </div>
+                    <div style="margin-top: 8px;">
+                        <label style="display: flex; align-items: center; cursor: pointer;">
+                            <input type="checkbox" id="rememberToken" style="margin-right: 8px;">
+                            💾 Lembrar meus tokens (salvo localmente)
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Catálogo de Estratégias -->
+                <div class="config-section">
+                    <h3>📊 Escolha sua Estratégia</h3>
+                    <div class="strategies-grid">
+                        <!-- Champion Strategy -->
+                        <div class="strategy-card active" data-strategy="champion" onclick="selectStrategy('champion')">
+                            <div class="strategy-icon">🏆</div>
+                            <h4>Champion Pro</h4>
+                            <p>Análise técnica completa com SMA(5/10/20) e RSI(14). Sistema de scoring 3 pontos.</p>
+                            <div class="strategy-stats">
+                                <span>💰 Stake: 2% da banca</span>
+                            </div>
+                        </div>
+
+                        <!-- Martingale Strategy -->
+                        <div class="strategy-card" data-strategy="martingale" onclick="selectStrategy('martingale')">
+                            <div class="strategy-icon">📈</div>
+                            <h4>Martingale Seguro</h4>
+                            <p>Dobra após loss com limite de 3 gales. RSI extremos + Volume.</p>
+                            <div class="strategy-stats">
+                                <span>💰 Stake: 1% inicial</span>
+                            </div>
+                        </div>
+
+                        <!-- Scalper Strategy -->
+                        <div class="strategy-card" data-strategy="scalper" onclick="selectStrategy('scalper')">
+                            <div class="strategy-icon">⚡</div>
+                            <h4>Scalper Rápido</h4>
+                            <p>Trades rápidos em tendências fortes. EMA(9/21) + MACD.</p>
+                            <div class="strategy-stats">
+                                <span>💰 Stake: 1.5% da banca</span>
+                            </div>
+                        </div>
+
+                        <!-- Bollinger Strategy -->
+                        <div class="strategy-card" data-strategy="bollinger" onclick="selectStrategy('bollinger')">
+                            <div class="strategy-icon">🎯</div>
+                            <h4>Bollinger Bands</h4>
+                            <p>Opera nos extremos das bandas. Alta precisão em lateralização.</p>
+                            <div class="strategy-stats">
+                                <span>💰 Stake: 2.5% da banca</span>
+                            </div>
+                        </div>
+
+                        <!-- Triple Check Strategy -->
+                        <div class="strategy-card" data-strategy="triple" onclick="selectStrategy('triple')">
+                            <div class="strategy-icon">🔒</div>
+                            <h4>Triple Check</h4>
+                            <p>Confirma com RSI + Estocástico + ADX. Ultra conservador.</p>
+                            <div class="strategy-stats">
+                                <span>💰 Stake: 3% da banca</span>
+                            </div>
+                        </div>
+
+                        <!-- Trend Rider Strategy -->
+                        <div class="strategy-card" data-strategy="trend" onclick="selectStrategy('trend')">
+                            <div class="strategy-icon">🌊</div>
+                            <h4>Trend Rider</h4>
+                            <p>Surfa tendências longas. SMA(50/200) + ADX forte.</p>
+                            <div class="strategy-stats">
+                                <span>💰 Stake: 2% da banca</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gestão de Risco -->
+                <div class="config-section">
+                    <h3>🛡️ Gestão de Risco</h3>
+                    <div class="form-group">
+                        <label for="symbol">📊 Ativo Principal</label>
+                        <select id="symbol">
+                            <option value="R_10">Volatility 10 Index</option>
+                            <option value="R_25">Volatility 25 Index</option>
+                            <option value="R_50">Volatility 50 Index</option>
+                            <option value="R_75">Volatility 75 Index</option>
+                            <option value="R_100">Volatility 100 Index</option>
+                            <option value="1HZ10V">Volatility 10 (1s) Index</option>
+                            <option value="1HZ25V">Volatility 25 (1s) Index</option>
+                            <option value="1HZ50V">Volatility 50 (1s) Index</option>
+                            <option value="1HZ75V">Volatility 75 (1s) Index</option>
+                            <option value="1HZ100V">Volatility 100 (1s) Index</option>
+                        </select>
+                    </div>
+                    
+                    <!-- 🆕 STOP LOSS DIÁRIO -->
+                    <div class="risk-control-group">
+                        <div class="risk-header">
+                            <label>🛑 Stop Loss Diário (Perda Máxima)</label>
+                            <div class="risk-type-toggle">
+                                <button class="risk-toggle-btn active" id="stopLossPercent" onclick="toggleRiskType('stopLoss', 'percent')">%</button>
+                                <button class="risk-toggle-btn" id="stopLossValue" onclick="toggleRiskType('stopLoss', 'value')">USD</button>
+                            </div>
+                        </div>
+                        <div class="risk-description">
+                            ⚠️ Bot PARA automaticamente ao atingir este limite de perda diária
+                        </div>
+                        
+                        <!-- Campo de Porcentagem -->
+                        <div class="form-group" id="stopLossPercentGroup">
+                            <label for="maxLossPercent">
+                                Perda Máxima: <span class="range-value" id="maxLossPercentValue">10</span>% da banca inicial
+                            </label>
+                            <input type="range" id="maxLossPercent" min="5" max="30" value="10" step="1" 
+                                   oninput="updateRangeValue('maxLossPercent', 'maxLossPercentValue', '%')">
+                            <small class="risk-hint">💡 Exemplo: Se iniciar com $100, bot para ao perder $10</small>
+                        </div>
+                        
+                        <!-- Campo de Valor Fixo -->
+                        <div class="form-group" id="stopLossValueGroup" style="display: none;">
+                            <label for="maxLossFixed">Perda Máxima (USD):</label>
+                            <input type="number" id="maxLossFixed" min="1" max="1000" value="10" step="0.5" 
+                                   placeholder="Ex: 10.00">
+                            <small class="risk-hint">💡 Exemplo: Bot para ao perder $10 no dia</small>
+                        </div>
+                    </div>
+                    
+                    <!-- 🆕 TAKE PROFIT DIÁRIO -->
+                    <div class="risk-control-group">
+                        <div class="risk-header">
+                            <label>✅ Take Profit Diário (Ganho Máximo)</label>
+                            <div class="risk-type-toggle">
+                                <button class="risk-toggle-btn active" id="takeProfitPercent" onclick="toggleRiskType('takeProfit', 'percent')">%</button>
+                                <button class="risk-toggle-btn" id="takeProfitValue" onclick="toggleRiskType('takeProfit', 'value')">USD</button>
+                            </div>
+                        </div>
+                        <div class="risk-description">
+                            🎯 Bot PARA automaticamente ao atingir este ganho diário (opcional)
+                        </div>
+                        
+                        <!-- Campo de Porcentagem -->
+                        <div class="form-group" id="takeProfitPercentGroup">
+                            <label for="maxProfitPercent">
+                                Ganho Máximo: <span class="range-value" id="maxProfitPercentValue">0</span>% da banca inicial
+                            </label>
+                            <input type="range" id="maxProfitPercent" min="0" max="50" value="0" step="5" 
+                                   oninput="updateRangeValue('maxProfitPercent', 'maxProfitPercentValue', '%')">
+                            <small class="risk-hint">💡 0% = Sem limite (bot continua operando)</small>
+                        </div>
+                        
+                        <!-- Campo de Valor Fixo -->
+                        <div class="form-group" id="takeProfitValueGroup" style="display: none;">
+                            <label for="maxProfitFixed">Ganho Máximo (USD):</label>
+                            <input type="number" id="maxProfitFixed" min="0" max="10000" value="0" step="1" 
+                                   placeholder="Ex: 50.00">
+                            <small class="risk-hint">💡 0 = Sem limite (bot continua operando)</small>
+                        </div>
+                    </div>
+                    
+                    <!-- 🆕 SENHA DE SEGURANÇA PARA HISTÓRICO -->
+                    <div class="risk-control-group">
+                        <div class="risk-header">
+                            <label>🔐 Senha de Segurança</label>
+                        </div>
+                        <div class="risk-description">
+                            🔒 Protege a exclusão do histórico de sessões
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="securityPasswordInput">Senha para Limpar Histórico:</label>
+                            <input type="password" id="securityPasswordInput" 
+                                   placeholder="Digite uma senha (deixe vazio para desabilitar)" 
+                                   autocomplete="new-password">
+                            <small class="risk-hint">💡 Será solicitada ao tentar limpar o histórico</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botões -->
+                <div class="modal-footer">
+                    <button class="btn-secondary" onclick="closeConfig()">Cancelar</button>
+                    <button class="btn-primary" onclick="saveAndClose()">💾 Salvar Configurações</button>
+                    <button class="btn-danger" onclick="clearToken()">🗑️ Limpar Token</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">
+                <div class="logo-icon">⚡</div>
+                <div class="logo-text">
+                    <h1>CHAMPION BOT WEB</h1>
+                    <p>🚀 Plataforma de Trading Profissional v2.0</p>
+                </div>
+            </div>
+            <div class="status-badge disconnected" id="statusBadge">
+                <span id="statusIcon">●</span>
+                <span id="statusText">Desconectado</span>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls-panel">
+            <button class="btn-config" onclick="openConfig()">
+                <span class="btn-icon">⚙️</span>
+                <span>Configurações</span>
+            </button>
+            <button class="btn-start" id="toggleBtn" onclick="toggleBot()">
+                <span class="btn-icon">▶</span>
+                <span>INICIAR BOT</span>
+            </button>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="grid">
+            <!-- Left Panel - Dashboard -->
+            <div class="panel">
+                <div class="panel-title">📊 Dashboard</div>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">💰</div>
+                        <div class="stat-label">Saldo</div>
+                        <div class="stat-value" id="balanceValue">$0.00</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon" id="profitIcon">📈</div>
+                        <div class="stat-label">Lucro Diário</div>
+                        <div class="stat-value" id="profitValue">$0.00</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">🎯</div>
+                        <div class="stat-label">Win Rate</div>
+                        <div class="stat-value" id="winRateValue">0.0%</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">📊</div>
+                        <div class="stat-label">Total Trades</div>
+                        <div class="stat-value" id="tradesValue">0</div>
+                    </div>
+                </div>
+
+                <!-- Estatísticas Detalhadas -->
+                <div class="detailed-stats">
+                    <div class="stat-row">
+                        <span class="stat-label-small">🟢 Vitórias:</span>
+                        <span class="stat-value-small wins" id="winsValue">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label-small">🔴 Derrotas:</span>
+                        <span class="stat-value-small losses" id="lossesValue">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label-small">⏱️ Próxima Análise:</span>
+                        <span class="stat-value-small countdown" id="countdownValue">--</span>
+                    </div>
+                    <div class="stat-row" id="currentAssetRow">
+                        <span class="stat-label-small">📊 Ativo Atual:</span>
+                        <span class="stat-value-small" id="currentAssetValue">--</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label-small">📈 Estratégia:</span>
+                        <span class="stat-value-small" id="strategyValue">Champion Pro</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel - Logs -->
+            <div class="panel">
+                <div class="panel-title">📋 Logs em Tempo Real</div>
+                <div class="log-container" id="logContainer"></div>
+            </div>
+        </div>
+
+        <!-- 🆕 Histórico de Sessões -->
+        <div class="panel session-history-panel">
+            <div class="panel-header">
+                <div class="panel-title">📜 Histórico de Sessões</div>
+                <button class="btn-clear-history" onclick="clearSessionHistory()">
+                    <span>🗑️ Limpar Histórico</span>
+                </button>
+            </div>
+            
+            <!-- 🆕 RESUMO GERAL -->
+            <div class="history-summary" id="historySummary" style="display: none;">
+                <div class="summary-title">📊 Resumo Geral</div>
+                <div class="summary-stats">
+                    <div class="summary-stat">
+                        <div class="summary-label">Total de Sessões</div>
+                        <div class="summary-value" id="summaryTotalSessions">0</div>
+                    </div>
+                    <div class="summary-stat">
+                        <div class="summary-label">Total de Trades</div>
+                        <div class="summary-value" id="summaryTotalTrades">0</div>
+                    </div>
+                    <div class="summary-stat">
+                        <div class="summary-label">Win Rate Geral</div>
+                        <div class="summary-value" id="summaryWinRate">0.0%</div>
+                    </div>
+                    <div class="summary-stat">
+                        <div class="summary-label">Resultado Total</div>
+                        <div class="summary-value-large" id="summaryProfit">+$0.00</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 🆕 FILTROS -->
+            <div class="history-filters" id="historyFilters" style="display: none;">
+                <div class="filter-group">
+                    <label class="filter-label">📅 Período:</label>
+                    <select class="filter-select" id="periodFilter" onchange="applyHistoryFilters()">
+                        <option value="all">Todos os Períodos</option>
+                        <option value="today">Hoje</option>
+                        <option value="week">Esta Semana</option>
+                        <option value="month">Este Mês</option>
+                        <option value="custom">Período Personalizado</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group" id="customDateGroup" style="display: none;">
+                    <label class="filter-label">De:</label>
+                    <input type="date" class="filter-input" id="startDateFilter" onchange="applyHistoryFilters()">
+                    <label class="filter-label">Até:</label>
+                    <input type="date" class="filter-input" id="endDateFilter" onchange="applyHistoryFilters()">
+                </div>
+                
+                <div class="filter-group">
+                    <label class="filter-label">📊 Estratégia:</label>
+                    <select class="filter-select" id="strategyFilter" onchange="applyHistoryFilters()">
+                        <option value="all">Todas as Estratégias</option>
+                        <option value="champion">Champion Pro</option>
+                        <option value="martingale">Martingale Seguro</option>
+                        <option value="antimartingale">Anti-Martingale</option>
+                        <option value="fibonacci">Fibonacci Pro</option>
+                        <option value="kelly">Kelly Criterion</option>
+                        <option value="flatbet">Flat Bet</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label class="filter-label">💰 Conta:</label>
+                    <select class="filter-select" id="accountFilter" onchange="applyHistoryFilters()">
+                        <option value="all">Todas</option>
+                        <option value="demo">Demo</option>
+                        <option value="real">Real</option>
+                    </select>
+                </div>
+                
+                <button class="btn-reset-filters" onclick="resetHistoryFilters()">
+                    🔄 Limpar Filtros
+                </button>
+                
+                <!-- 🆕 BOTÃO EXPORTAR PDF -->
+                <button class="btn-export-pdf" onclick="exportHistoryToPDF()">
+                    📄 Exportar PDF
+                </button>
+            </div>
+            
+            <div class="session-history-container" id="sessionHistoryContainer">
+                <div class="empty-history">
+                    <div class="empty-icon">📊</div>
+                    <p>Nenhuma sessão registrada ainda</p>
+                    <small>Inicie o bot para começar a registrar sessões</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
