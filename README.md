@@ -226,4 +226,5 @@ MIT License - Use livremente!
 
 ---
 
-**⚡ Champion Bot Web v1.0** | Desenvolvido para Trading Profissional 🚀
+**⚡ Champion Bot Web v2.0** | Desenvolvido para Trading Profissional 🚀
+
