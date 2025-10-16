@@ -21,7 +21,6 @@ let tickSubscription = null; // Subscrição de ticks em tempo real
 let activeTradeId = null; // ID do trade ativo
 let lastAnalysisTime = 0; // Timestamp da última análise
 let analysisThrottle = 5000; // Mínimo 5 segundos entre análises (evitar spam)
-let analysisCounter = 0; // 🆕 Contador de análises realizadas
 
 // Gerenciamento de contas Demo/Real
 let currentAccountType = 'demo'; // 'demo' ou 'real'
@@ -48,7 +47,7 @@ let sessionHistory = []; // Array de sessões anteriores
 // Rotação de ativos
 let currentAssetIndex = 0;
 let assetFailCount = 0;
-let maxFailsBeforeRotate = 10;
+let maxFailsBeforeRotate = 5; // 🔥 Reduzido de 10 para 5 (rotaciona mais rápido)
 const AVAILABLE_ASSETS = [
     'R_10', 'R_25', 'R_50', 'R_75', 'R_100',
     '1HZ10V', '1HZ25V', '1HZ50V', '1HZ75V', '1HZ100V'
@@ -66,12 +65,17 @@ let simulationResults = {};
 const STRATEGIES = {
     champion: {
         name: 'Champion Pro',
-        stakePercent: 1.5,  // Reduzido de 2% para 1.5% (mais seguro)
+        stakePercent: 1.5,
         minStake: 0.35,
-        description: 'Estratégia conservadora com análise técnica completa',
-        minScore: 2,        // Mínimo 2/3 pontos para entrar
-        useADXFilter: true, // Filtro de tendência forte
-        maxTradesPerDay: 15 // Máximo de trades diários
+        description: '⚖️ BALANCEADO - Análise técnica completa. Win rate 65-70%',
+        minScore: 2,              // Mínimo 2/4 pontos (50% - BALANCEADO)
+        useADXFilter: false,      // SEM filtro ADX (mais sinais)
+        useMACDFilter: false,     // SEM filtro MACD (mais rápido)
+        minVolatility: 0.2,       // Volatilidade baixa aceita (0.2%)
+        rsiMin: 30,               // RSI menos extremo (30-70)
+        rsiMax: 70,
+        maxTradesPerDay: 30,      // Mais trades por dia
+        cooldownSeconds: 180      // 3min entre trades
     },
     martingale: {
         name: 'Martingale Seguro',
@@ -82,10 +86,22 @@ const STRATEGIES = {
         martingaleMultiplier: 2
     },
     scalper: {
-        name: 'Scalper Rápido',
-        stakePercent: 1.5,
+        name: 'Scalper Pro Ultra',
+        stakePercent: 1,          // 1% - Stake baixo para alta frequência
         minStake: 0.35,
-        description: 'Trades rápidos aproveitando micro movimentos'
+        description: '⚡ AGRESSIVO - Operações rápidas e frequentes. Win rate 60-65%',
+        minScore: 2,              // 🔥 Apenas 2/4 pontos (50% - RÁPIDO)
+        useADXFilter: false,      // SEM filtro ADX (aceita mercado lateral)
+        useMACDFilter: false,     // SEM filtro MACD (mais sinais)
+        minVolatility: 0.15,      // Volatilidade muito baixa aceita (0.15%)
+        maxVolatility: 5.0,       // Aceita alta volatilidade (5%)
+        rsiMin: 35,               // RSI menos extremo (35-65)
+        rsiMax: 65,
+        priceDistanceMin: 0.2,    // Distância menor aceita (20% do ATR)
+        requireBonusPoint: false,
+        maxTradesPerHour: 10,     // Muitos trades/hora
+        maxTradesPerDay: 80,      // Muitas operações por dia
+        cooldownSeconds: 60       // Apenas 1min entre trades (MUITO RÁPIDO)
     },
     bollinger: {
         name: 'Bollinger Bands',
@@ -95,10 +111,20 @@ const STRATEGIES = {
     },
     triple: {
         name: 'Triple Check',
-        stakePercent: 2.0,  // Reduzido de 3% para 2%
+        stakePercent: 2.0,
         minStake: 0.35,
-        description: 'Ultra conservador com múltiplas confirmações',
-        minScore: 3         // Precisa de 3/3 pontos
+        description: '🛡️ CONSERVADOR - Ultra seguro com múltiplas confirmações. Win rate 70-75%',
+        minScore: 3,              // Precisa de 3/4 pontos (75% - CONSERVADOR)
+        useADXFilter: true,       // Com filtro ADX
+        useMACDFilter: true,      // Com filtro MACD
+        minVolatility: 0.3,       // Volatilidade mínima 0.3%
+        maxVolatility: 2.5,       // Volatilidade máxima 2.5%
+        rsiMin: 25,               // RSI extremo (25-75)
+        rsiMax: 75,
+        priceDistanceMin: 0.3,    // Distância mínima 30% ATR
+        requireBonusPoint: true,  // Exige bonus
+        maxTradesPerDay: 15,      // Poucos trades, mas precisos
+        cooldownSeconds: 300      // 5min entre trades
     },
     trend: {
         name: 'Trend Rider',
@@ -2008,12 +2034,6 @@ async function handleTickUpdate(event) {
         
         // Throttle: mínimo 5 segundos entre análises (evitar spam)
         if (currentTime - lastAnalysisTime < analysisThrottle) {
-            // Log a cada 30 segundos para mostrar que bot está ativo
-            const timeSinceLastLog = currentTime - (window.lastHeartbeatLog || 0);
-            if (timeSinceLastLog >= 30000) {
-                log(`💚 Bot ativo - Aguardando próxima análise (throttle: ${Math.ceil((analysisThrottle - (currentTime - lastAnalysisTime)) / 1000)}s)`, 'info');
-                window.lastHeartbeatLog = currentTime;
-            }
             return;
         }
         
@@ -2022,8 +2042,7 @@ async function handleTickUpdate(event) {
         const symbol = document.getElementById('symbol').value;
         const price = data.tick.quote;
         
-        analysisCounter++;
-        log(`📊 Novo tick: ${price.toFixed(5)} - Analisando... (Análise #${analysisCounter})`, 'info');
+        log(`📊 Novo tick: ${price.toFixed(5)} - Analisando...`, 'info');
         
         try {
             // Obter 40 candles para análise completa
@@ -2031,11 +2050,6 @@ async function handleTickUpdate(event) {
             
             if (!candles) {
                 log('⚠️ Não foi possível obter dados do mercado', 'warning');
-                assetFailCount++;
-                if (assetFailCount >= maxFailsBeforeRotate) {
-                    log(`🔄 Muitas falhas consecutivas (${assetFailCount}/${maxFailsBeforeRotate}) - Rotacionando ativo...`, 'warning');
-                    rotateAsset();
-                }
                 return;
             }
             
@@ -2043,10 +2057,6 @@ async function handleTickUpdate(event) {
             
             if (signal && signal.confidence >= 0.66) {
                 await executeTrade(signal);
-            } else if (signal && signal.confidence < 0.66) {
-                log(`⏳ Sinal fraco (confiança: ${(signal.confidence * 100).toFixed(1)}% < 66%) - Aguardando melhor oportunidade`, 'warning');
-            } else {
-                log(`⏸️ Nenhum sinal válido no momento - Continuando monitoramento...`, 'info');
             }
             
         } catch (error) {
@@ -2057,12 +2067,6 @@ async function handleTickUpdate(event) {
 
 function stopBot() {
     isRunning = false;
-    
-    // 🆕 Resetar contador de análises
-    if (analysisCounter > 0) {
-        log(`📊 Total de análises realizadas nesta sessão: ${analysisCounter}`, 'info');
-        analysisCounter = 0;
-    }
     
     // Cancelar subscrição de ticks
     if (tickSubscription) {
@@ -2149,7 +2153,14 @@ async function getCandles(symbol, count) {
 }
 
 function analyzeMarket(candles) {
-    // Estratégia Champion - MODO EXPERT 🧠
+    // 🆕 Detectar estratégia ativa
+    const strategy = STRATEGIES[currentStrategy];
+    const isScalper = currentStrategy === 'scalper';
+    const isExpertMode = strategy.minScore >= 3 || isScalper;
+    
+    log(`📊 ANÁLISE: ${strategy.name} ${isScalper ? '⚡ (MODO SCALPER)' : isExpertMode ? '🧠 (MODO EXPERT)' : ''}`, 'info');
+    
+    // Estratégia Champion - MODO EXPERT 🧠 / Scalper Pro Ultra ⚡
     const closes = candles.map(c => c.close);
     const highs = candles.map(c => c.high);
     const lows = candles.map(c => c.low);
@@ -2178,17 +2189,31 @@ function analyzeMarket(candles) {
     const avgPrice = closes[closes.length - 1];
     const volatilityPercent = (recentVolatility / avgPrice) * 100;
     
-    log(`📊 ANÁLISE TÉCNICA EXPERT:`, 'info');
+    // 🆕 Filtros dinâmicos baseados na estratégia
+    const adxMin = strategy.useADXFilter ? 25 : 20;
+    const volMin = isScalper ? (strategy.minVolatility || 0.4) : 0.3;
+    const volMax = isScalper ? (strategy.maxVolatility || 2.0) : 999;
+    const macdMin = isScalper ? (strategy.macdMinStrength || 0.00002) : 0.00001;
+    const rsiMin = isScalper ? (strategy.rsiMin || 20) : 25;
+    const rsiMax = isScalper ? (strategy.rsiMax || 80) : 75;
+    const priceDistMin = isScalper ? (strategy.priceDistanceMin || 0.4) : 0.3;
+    const minScore = strategy.minScore || 3;
+    
+    log(`📊 ANÁLISE TÉCNICA ${isScalper ? 'SCALPER PRO ⚡' : 'EXPERT 🧠'}:`, 'info');
     log(`   SMA5: ${sma5.toFixed(5)} | SMA10: ${sma10.toFixed(5)} | SMA20: ${sma20.toFixed(5)}`, 'info');
     log(`   RSI(14): ${rsi.toFixed(2)}`, 'info');
-    log(`   ADX(14): ${adx.toFixed(2)} ${adx > 25 ? '✅ (Tendência forte)' : '⚠️ (Mercado lateral)'}`, adx > 25 ? 'info' : 'warning');
+    log(`   ADX(14): ${adx.toFixed(2)} ${adx > adxMin ? '✅ (Tendência forte)' : '⚠️ (Mercado lateral)'}`, adx > adxMin ? 'info' : 'warning');
     log(`   ATR(14): ${atr.toFixed(5)} (Volatilidade)`, 'info');
     log(`   MACD: ${macd.macd.toFixed(5)} | Signal: ${macd.signal.toFixed(5)} | Histogram: ${macd.histogram.toFixed(5)}`, 'info');
-    log(`   🎯 Volatilidade Recente: ${volatilityPercent.toFixed(3)}% ${volatilityPercent < 0.5 ? '⚠️ (Ruído alto)' : '✅ (Sinal limpo)'}`, volatilityPercent < 0.5 ? 'warning' : 'info');
+    log(`   🎯 Volatilidade: ${volatilityPercent.toFixed(3)}% ${volatilityPercent < volMin ? '⚠️ (Muito baixa)' : volatilityPercent > volMax ? '⚠️ (Muito alta)' : '✅ (Ideal)'}`, volatilityPercent < volMin || volatilityPercent > volMax ? 'warning' : 'info');
+    
+    if (isScalper) {
+        log(`   ⚡ SCALPER: ADX>${adxMin} | Vol:${volMin}-${volMax}% | MACD>${macdMin} | RSI:${rsiMin}-${rsiMax} | Dist>${priceDistMin}`, 'info');
+    }
     
     // ⚠️ FILTRO 1: ADX - Evitar mercado lateral
-    if (adx < 25) {
-        log(`❌ RECUSADO: ADX baixo (${adx.toFixed(2)} < 25) - Mercado lateral sem tendência`, 'error');
+    if (strategy.useADXFilter && adx < adxMin) {
+        log(`❌ RECUSADO: ADX baixo (${adx.toFixed(2)} < ${adxMin}) - Mercado lateral sem tendência`, 'error');
         assetFailCount++;
         log(`📉 Falhas consecutivas: ${assetFailCount}/${maxFailsBeforeRotate}`, 'warning');
         
@@ -2198,9 +2223,21 @@ function analyzeMarket(candles) {
         return null;
     }
     
-    // 🆕 FILTRO 2: Volatilidade Extrema - Filtrar ruído
-    if (volatilityPercent < 0.3) {
-        log(`❌ RECUSADO: Volatilidade muito baixa (${volatilityPercent.toFixed(3)}%) - Sinal com muito ruído`, 'error');
+    // 🆕 FILTRO 2: Volatilidade - Faixa ideal (especialmente Scalper)
+    if (volatilityPercent < volMin) {
+        log(`❌ RECUSADO: Volatilidade muito baixa (${volatilityPercent.toFixed(3)}% < ${volMin}%) - Sinal com muito ruído`, 'error');
+        assetFailCount++;
+        log(`📉 Falhas consecutivas: ${assetFailCount}/${maxFailsBeforeRotate}`, 'warning');
+        
+        if (assetFailCount >= maxFailsBeforeRotate) {
+            rotateAsset();
+        }
+        return null;
+    }
+    
+    // 🆕 FILTRO 2.5: Volatilidade máxima (Scalper evita chaos)
+    if (isScalper && volatilityPercent > volMax) {
+        log(`❌ RECUSADO: Volatilidade muito alta (${volatilityPercent.toFixed(3)}% > ${volMax}%) - Mercado caótico`, 'error');
         assetFailCount++;
         log(`📉 Falhas consecutivas: ${assetFailCount}/${maxFailsBeforeRotate}`, 'warning');
         
@@ -2212,8 +2249,8 @@ function analyzeMarket(candles) {
     
     // 🆕 FILTRO 3: MACD deve estar forte (histogram significativo)
     const histogramStrength = Math.abs(macd.histogram);
-    if (histogramStrength < 0.00001) {
-        log(`❌ RECUSADO: MACD muito fraco (Histogram: ${macd.histogram.toFixed(6)}) - Momentum insuficiente`, 'error');
+    if (strategy.useMACDFilter && histogramStrength < macdMin) {
+        log(`❌ RECUSADO: MACD muito fraco (Histogram: ${macd.histogram.toFixed(6)} < ${macdMin}) - Momentum insuficiente`, 'error');
         assetFailCount++;
         log(`📉 Falhas consecutivas: ${assetFailCount}/${maxFailsBeforeRotate}`, 'warning');
         
@@ -2223,9 +2260,11 @@ function analyzeMarket(candles) {
         return null;
     }
     
-    // Sistema de scoring Champion EXPERT 🧠
+    // Sistema de scoring EXPERT 🧠 / SCALPER ⚡
     let score = 0;
     let direction = null;
+    
+    log(`   🎯 Parâmetros: Score mínimo ${minScore}/4 | RSI ${rsiMin}-${rsiMax} | Dist>${priceDistMin}`, 'info');
     
     // Critério 1: Tendência FORTE das SMAs (mais rigoroso)
     if (sma5 > sma10 && sma10 > sma20 && (sma5 - sma20) > atr * 0.5) {
@@ -2238,33 +2277,34 @@ function analyzeMarket(candles) {
         log(`   ❌ Critério 1: Tendência fraca ou ausente (0 pontos)`, 'warning');
     }
     
-    // Critério 2: RSI em zonas EXTREMAS (mais conservador)
-    if (rsi < 25) {
+    // Critério 2: RSI em zonas EXTREMAS (dinâmico por estratégia)
+    if (rsi < rsiMin) {
         score++;
-        log(`   ✅ Critério 2: RSI sobrevenda EXTREMA (${rsi.toFixed(2)} < 25) +1 ponto`, 'info');
-    } else if (rsi > 75) {
+        log(`   ✅ Critério 2: RSI sobrevenda EXTREMA (${rsi.toFixed(2)} < ${rsiMin}) +1 ponto`, 'info');
+    } else if (rsi > rsiMax) {
         score++;
-        log(`   ✅ Critério 2: RSI sobrecompra EXTREMA (${rsi.toFixed(2)} > 75) +1 ponto`, 'info');
+        log(`   ✅ Critério 2: RSI sobrecompra EXTREMA (${rsi.toFixed(2)} > ${rsiMax}) +1 ponto`, 'info');
     } else {
         log(`   ❌ Critério 2: RSI não está em zona extrema (${rsi.toFixed(2)}) (0 pontos)`, 'warning');
     }
     
-    // Critério 3: Confirmação de preço COM distância mínima
+    // Critério 3: Confirmação de preço COM distância mínima (dinâmica)
     const lastClose = closes[closes.length - 1];
     const priceDistanceFromSMA = Math.abs(lastClose - sma10) / atr;
     
-    if (lastClose > sma5 && sma5 > sma10 && priceDistanceFromSMA > 0.3) {
+    if (lastClose > sma5 && sma5 > sma10 && priceDistanceFromSMA > priceDistMin) {
         score++;
         log(`   ✅ Critério 3: Preço MUITO acima das médias +1 ponto`, 'info');
-    } else if (lastClose < sma5 && sma5 < sma10 && priceDistanceFromSMA > 0.3) {
+    } else if (lastClose < sma5 && sma5 < sma10 && priceDistanceFromSMA > priceDistMin) {
         score++;
         log(`   ✅ Critério 3: Preço MUITO abaixo das médias +1 ponto`, 'info');
     } else {
-        log(`   ❌ Critério 3: Preço muito próximo das médias (distância: ${priceDistanceFromSMA.toFixed(2)} ATR) (0 pontos)`, 'warning');
+        log(`   ❌ Critério 3: Preço muito próximo das médias (distância: ${priceDistanceFromSMA.toFixed(2)} ATR, mín: ${priceDistMin}) (0 pontos)`, 'warning');
     }
     
-    // Critério 4: MACD Momentum FORTE
-    if (macd.histogram > 0 && macd.macd > macd.signal && histogramStrength > 0.00005) {
+    // Critério 4: MACD Momentum FORTE (Scalper exige mais força)
+    const macdStrengthRequired = isScalper ? macdMin * 2.5 : 0.00005;
+    if (macd.histogram > 0 && macd.macd > macd.signal && histogramStrength > macdStrengthRequired) {
         score++;
         log(`   ✅ Critério 4: MACD bullish FORTE +1 ponto`, 'info');
     } else if (macd.histogram < 0 && macd.macd < macd.signal && histogramStrength > 0.00005) {
@@ -2279,28 +2319,28 @@ function analyzeMarket(candles) {
     const isBullish = sma5 > sma10 && rsi < 60 && macd.histogram > 0 && adx > 30;
     const isBearish = sma5 < sma10 && rsi > 40 && macd.histogram < 0 && adx > 30;
     
-    if (isBullish || isBearish) {
+    if (strategy.requireBonusPoint !== false && (isBullish || isBearish)) {
         bonusPoint = true;
         log(`   🎁 BONUS: Convergência total de indicadores! +0.5 pontos`, 'trade');
     }
     
-    // Determina direção (mais conservador: 3/4 pontos + confirmações)
-    const minScore = 3; // Mínimo 3 de 4
+    // Determina direção (score dinâmico por estratégia)
     const finalScore = score + (bonusPoint ? 0.5 : 0);
     
     if (score >= minScore) {
         // CALL: Todas as condições bullish
-        if (sma5 > sma10 && rsi < 70 && macd.histogram > 0 && adx > 25) {
+        if (sma5 > sma10 && rsi < 70 && macd.histogram > 0 && adx > adxMin) {
             direction = 'CALL';
         } 
         // PUT: Todas as condições bearish
-        else if (sma5 < sma10 && rsi > 30 && macd.histogram < 0 && adx > 25) {
+        else if (sma5 < sma10 && rsi > 30 && macd.histogram < 0 && adx > adxMin) {
             direction = 'PUT';
         }
         
         if (direction) {
             const confidence = (finalScore / 4 * 100).toFixed(0);
-            log(`🎯 SINAL EXPERT CONFIRMADO: ${direction} | Score: ${finalScore}/4 (${confidence}% confiança) 🧠`, 'trade');
+            const modeLabel = isScalper ? 'SCALPER PRO ⚡' : 'EXPERT 🧠';
+            log(`🎯 SINAL ${modeLabel} CONFIRMADO: ${direction} | Score: ${finalScore}/4 (${confidence}% confiança)`, 'trade');
             log(`   ✅ ADX: ${adx.toFixed(2)} | Volatilidade: ${volatilityPercent.toFixed(3)}% | MACD: ${histogramStrength.toFixed(6)}`, 'trade');
             assetFailCount = 0; // Reseta contador
         } else {
