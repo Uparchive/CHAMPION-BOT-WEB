@@ -186,6 +186,22 @@
        CHAMPION BOT - Dashboard e Interface Principal
        ═══════════════════════════════════════════════════════════ */
     
+    /* Grid Principal - Transformar em coluna única no mobile */
+    .grid {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 15px !important;
+        margin-bottom: 15px !important;
+    }
+    
+    /* Garantir que os painéis apareçam */
+    .panel {
+        display: block !important;
+        width: 100% !important;
+        min-height: 200px !important;
+        margin-bottom: 15px !important;
+    }
+    
     /* Header Principal do Bot */
     .bot-header,
     header {

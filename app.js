@@ -627,8 +627,42 @@ async function endSession(reason = 'manual') {
     currentSession.duration = Math.floor((now - currentSession.startTime) / 1000); // em segundos
     currentSession.stopReason = reason;
     
+    // 🔥 CALCULAR CAMPOS NECESSÁRIOS PARA O FIREBASE
+    const totalTrades = currentSession.trades.length;
+    const wins = currentSession.wins || 0;
+    const losses = currentSession.losses || 0;
+    const winRate = totalTrades > 0 ? ((wins / totalTrades) * 100).toFixed(1) : 0;
+    const profit = balance - initialBalance;
+    const profitPercent = initialBalance > 0 ? ((profit / initialBalance) * 100).toFixed(2) : 0;
+    
+    // Atualizar sessão com valores calculados
+    currentSession.totalTrades = totalTrades;
+    currentSession.winRate = parseFloat(winRate);
+    currentSession.profit = parseFloat(profit.toFixed(2));
+    currentSession.profitPercent = parseFloat(profitPercent);
+    currentSession.initialBalance = initialBalance;
+    currentSession.finalBalance = balance;
+    currentSession.asset = currentSession.startAsset || 'R_50';
+    currentSession.strategy = currentSession.strategyName || STRATEGIES[currentStrategy].name;
+    
+    console.log('📊 Sessão preparada para salvar:', {
+        username: getCurrentUsername(),
+        totalTrades: currentSession.totalTrades,
+        wins: wins,
+        losses: losses,
+        profit: currentSession.profit,
+        duration: currentSession.duration,
+        strategy: currentSession.strategy
+    });
+    
     // 🔥 SALVAR IMEDIATAMENTE NO FIREBASE (ANTES DE LIMPAR)
-    await saveSessionToFirebase(currentSession);
+    const firebaseId = await saveSessionToFirebase(currentSession);
+    
+    if (firebaseId) {
+        log(`🔥 Sessão salva no Firebase!`, 'success');
+    } else {
+        log(`⚠️ Erro ao salvar no Firebase (salvo localmente)`, 'warning');
+    }
     
     // Salvar sessão no histórico local
     sessionHistory.unshift(currentSession); // Adiciona no início do array
@@ -678,31 +712,41 @@ function getUserStorageKey(baseKey) {
 
 // 🔥 SALVA UMA SESSÃO INDIVIDUAL NO FIREBASE
 async function saveSessionToFirebase(session) {
-    if (!session || !session.endTime) {
-        console.warn('⚠️ Sessão inválida - não pode ser salva no Firebase');
-        return;
+    if (!session) {
+        console.error('❌ Sessão é null ou undefined');
+        return null;
+    }
+    
+    if (!session.endTime) {
+        console.warn('⚠️ Sessão não tem endTime - não pode ser salva no Firebase');
+        return null;
     }
     
     try {
         const username = getCurrentUsername();
         
+        console.log('🔥 Preparando para salvar no Firebase...');
+        console.log('👤 Usuário:', username);
+        console.log('📊 Trades:', session.totalTrades);
+        console.log('💰 Profit:', session.profit);
+        
         const sessionData = {
             username: username,
             startTime: session.startTime.toISOString(),
             endTime: session.endTime.toISOString(),
-            duration: session.duration,
-            strategy: session.strategy,
-            accountType: session.accountType,
-            asset: session.asset,
-            assetsUsed: session.assetsUsed || [session.asset],
-            initialBalance: session.initialBalance,
-            finalBalance: session.finalBalance || session.endBalance,
-            profit: session.profit,
-            profitPercent: session.profitPercent,
-            totalTrades: session.totalTrades,
-            wins: session.wins,
-            losses: session.losses,
-            winRate: session.winRate,
+            duration: session.duration || 0,
+            strategy: session.strategy || 'Champion Pro',
+            accountType: session.accountType || currentAccountType,
+            asset: session.asset || 'R_50',
+            assetsUsed: session.assetsUsed || [session.asset || 'R_50'],
+            initialBalance: session.initialBalance || 0,
+            finalBalance: session.finalBalance || session.endBalance || 0,
+            profit: session.profit || 0,
+            profitPercent: session.profitPercent || 0,
+            totalTrades: session.totalTrades || 0,
+            wins: session.wins || 0,
+            losses: session.losses || 0,
+            winRate: session.winRate || 0,
             stopReason: session.stopReason || 'manual',
             trades: session.trades || [],
             timestamp: new Date().toISOString(),
@@ -713,11 +757,27 @@ async function saveSessionToFirebase(session) {
             }
         };
         
+        console.log('📤 Enviando para Firebase:', sessionData);
+        
         const docRef = await addDoc(collection(db, 'sessions'), sessionData);
-        console.log(`🔥 Sessão salva no Firebase com ID: ${docRef.id} para usuário: ${username}`);
+        
+        console.log(`🔥✅ Sessão salva no Firebase com ID: ${docRef.id}`);
+        console.log(`👤 Para usuário: ${username}`);
+        console.log(`📊 Dados salvos:`, sessionData);
+        
         return docRef.id;
     } catch (firebaseError) {
-        console.error('⚠️ Erro ao salvar no Firebase:', firebaseError);
+        console.error('❌ ERRO ao salvar no Firebase:');
+        console.error('Código:', firebaseError.code);
+        console.error('Mensagem:', firebaseError.message);
+        console.error('Erro completo:', firebaseError);
+        
+        if (firebaseError.code === 'permission-denied') {
+            console.error('🔒 PERMISSÃO NEGADA! Verifique as regras do Firestore');
+        } else if (firebaseError.code === 'unavailable') {
+            console.error('🌐 Firebase indisponível. Verifique sua conexão com internet');
+        }
+        
         return null;
     }
 }
