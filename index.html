@@ -18,11 +18,29 @@
             if (!session) {
                 alert('🔐 Acesso restrito! Você precisa fazer login para usar o Champion Bot.');
                 window.location.href = 'auth.html';
-            } else {
-                // Exibe informações do usuário logado
-                console.log('✅ Usuário autenticado:', session.username);
-                displayUserInfo(session);
+                return;
             }
+            
+            // Busca informações do usuário
+            const user = getUserDetailedInfo(session.username);
+            
+            // ⚠️ VERIFICA SE PLANO EXPIROU (MENSAL)
+            if (user.subscriptionType === 'monthly' && user.expiryDate) {
+                const expiryDate = new Date(user.expiryDate);
+                const now = new Date();
+                
+                if (now > expiryDate) {
+                    // PLANO EXPIRADO! Redireciona para página de renovação
+                    console.warn('❌ Plano expirado em:', expiryDate);
+                    alert('⚠️ Seu plano mensal expirou!\n\nRenove para continuar usando o Champion Bot.');
+                    window.location.href = 'renew_subscription.html';
+                    return;
+                }
+            }
+            
+            // Exibe informações do usuário logado
+            console.log('✅ Usuário autenticado:', session.username);
+            displayUserInfo(session);
         });
 
         function displayUserInfo(session) {

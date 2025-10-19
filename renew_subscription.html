@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚠️ Renovar Assinatura - Champion Bot</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0a0f;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(255, 193, 7, 0.3) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(102, 126, 234, 0.2) 0px, transparent 50%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+            backdrop-filter: blur(30px);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 30px;
+            padding: 60px 40px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+        }
+
+        .icon {
+            font-size: 100px;
+            margin-bottom: 30px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        h1 {
+            font-size: 36px;
+            font-weight: 800;
+            color: #ffd93d;
+            margin-bottom: 20px;
+        }
+
+        p {
+            color: rgba(255,255,255,0.8);
+            font-size: 18px;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .plan-box {
+            background: rgba(102, 126, 234, 0.1);
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            border-radius: 20px;
+            padding: 30px;
+            margin: 30px 0;
+        }
+
+        .plan-box h3 {
+            color: #fff;
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+
+        .price {
+            font-size: 48px;
+            font-weight: 800;
+            color: #51cf66;
+            margin: 20px 0;
+        }
+
+        .price small {
+            font-size: 20px;
+            color: rgba(255,255,255,0.6);
+        }
+
+        .features {
+            text-align: left;
+            margin: 20px 0;
+        }
+
+        .features li {
+            color: rgba(255,255,255,0.8);
+            margin: 10px 0;
+            padding-left: 30px;
+            position: relative;
+        }
+
+        .features li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #51cf66;
+            font-weight: bold;
+            font-size: 20px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 20px 50px;
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            margin: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(102, 126, 234, 0.5);
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            padding: 15px 30px;
+            font-size: 16px;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.15);
+        }
+
+        .user-info {
+            background: rgba(255, 193, 7, 0.1);
+            border: 1px solid rgba(255, 193, 7, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .user-info p {
+            margin: 8px 0;
+            font-size: 16px;
+        }
+
+        .user-info strong {
+            color: #ffd93d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">⚠️</div>
+        <h1>Sua Assinatura Expirou!</h1>
+        <p>
+            Para continuar usando o Champion Bot,<br>
+            renove sua assinatura mensal agora!
+        </p>
+
+        <div class="user-info" id="userInfo">
+            <p><strong>Usuário:</strong> <span id="username">-</span></p>
+            <p><strong>E-mail:</strong> <span id="email">-</span></p>
+            <p><strong>Expirou em:</strong> <span id="expiryDate">-</span></p>
+        </div>
+
+        <div class="plan-box">
+            <h3>📅 Plano Mensal</h3>
+            <div class="price">
+                R$ 25<small>/mês</small>
+            </div>
+            <ul class="features">
+                <li>Acesso completo ao bot por 30 dias</li>
+                <li>Todas as funcionalidades liberadas</li>
+                <li>Suporte prioritário</li>
+                <li>Atualizações automáticas</li>
+            </ul>
+        </div>
+
+        <a href="https://mpago.la/24JDjvC" class="btn" target="_blank" onclick="saveRenewalIntent()">
+            💳 Renovar por R$ 25,00
+        </a>
+
+        <p style="font-size: 14px; color: rgba(255,255,255,0.5); margin-top: 20px;">
+            Após o pagamento, seu acesso será renovado por mais 30 dias automaticamente!
+        </p>
+
+        <a href="auth.html" class="btn btn-secondary">
+            🏠 Voltar ao Login
+        </a>
+    </div>
+
+    <script src="auth.js"></script>
+
+    <script>
+        // Carrega informações do usuário
+        const session = window.ChampionBotAuth.getActiveSession();
+
+        if (session) {
+            document.getElementById('username').textContent = session.username;
+            document.getElementById('email').textContent = session.email;
+            
+            if (session.expiryDate) {
+                const expiryDate = new Date(session.expiryDate);
+                document.getElementById('expiryDate').textContent = expiryDate.toLocaleDateString('pt-BR');
+            }
+        }
+
+        // Salva intenção de renovação
+        function saveRenewalIntent() {
+            if (session) {
+                localStorage.setItem('pendingRenewal', JSON.stringify({
+                    username: session.username,
+                    email: session.email,
+                    renewalDate: new Date().toISOString()
+                }));
+                console.log('💾 Intenção de renovação salva');
+            }
+        }
+
+        // Verifica se acabou de renovar (voltou do pagamento)
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('renewed') === 'true') {
+            alert('✅ Assinatura renovada com sucesso!\n\nBem-vindo de volta ao Champion Bot!');
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>
