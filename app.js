@@ -618,7 +618,7 @@ function recordTrade(tradeData) {
     }
 }
 
-function endSession(reason = 'manual') {
+async function endSession(reason = 'manual') {
     if (!currentSession) return;
     
     const now = new Date();
@@ -627,7 +627,10 @@ function endSession(reason = 'manual') {
     currentSession.duration = Math.floor((now - currentSession.startTime) / 1000); // em segundos
     currentSession.stopReason = reason;
     
-    // Salvar sessão no histórico
+    // 🔥 SALVAR IMEDIATAMENTE NO FIREBASE (ANTES DE LIMPAR)
+    await saveSessionToFirebase(currentSession);
+    
+    // Salvar sessão no histórico local
     sessionHistory.unshift(currentSession); // Adiciona no início do array
     
     // Limitar histórico a 50 sessões
@@ -635,8 +638,8 @@ function endSession(reason = 'manual') {
         sessionHistory = sessionHistory.slice(0, 50);
     }
     
-    // Salvar no localStorage
-    saveSessionHistory();
+    // Salvar no localStorage (backup)
+    saveSessionHistoryLocal();
     
     // Atualizar interface
     renderSessionHistory();
@@ -673,53 +676,65 @@ function getUserStorageKey(baseKey) {
     return `${baseKey}_${username}`;
 }
 
-async function saveSessionHistory() {
+// 🔥 SALVA UMA SESSÃO INDIVIDUAL NO FIREBASE
+async function saveSessionToFirebase(session) {
+    if (!session || !session.endTime) {
+        console.warn('⚠️ Sessão inválida - não pode ser salva no Firebase');
+        return;
+    }
+    
     try {
         const username = getCurrentUsername();
-        const storageKey = getUserStorageKey('championBotSessionHistory');
         
-        // 1️⃣ Salva no localStorage (backup local)
-        localStorage.setItem(storageKey, JSON.stringify(sessionHistory));
-        console.log(`✅ Histórico salvo localmente para: ${username}`);
-        
-        // 2️⃣ Salva no Firebase Firestore (nuvem)
-        if (currentSession && currentSession.endTime) {
-            try {
-                const sessionData = {
-                    username: username,
-                    startTime: currentSession.startTime.toISOString(),
-                    endTime: currentSession.endTime.toISOString(),
-                    duration: currentSession.duration,
-                    strategy: currentSession.strategy,
-                    accountType: currentSession.accountType,
-                    asset: currentSession.asset,
-                    initialBalance: currentSession.initialBalance,
-                    finalBalance: currentSession.finalBalance,
-                    profit: currentSession.profit,
-                    profitPercent: currentSession.profitPercent,
-                    totalTrades: currentSession.totalTrades,
-                    wins: currentSession.wins,
-                    losses: currentSession.losses,
-                    winRate: currentSession.winRate,
-                    timestamp: new Date().toISOString(),
-                    device: {
-                        userAgent: navigator.userAgent,
-                        platform: navigator.platform,
-                        language: navigator.language
-                    }
-                };
-                
-                const docRef = await addDoc(collection(db, 'sessions'), sessionData);
-                console.log(`🔥 Sessão salva no Firebase com ID: ${docRef.id}`);
-            } catch (firebaseError) {
-                console.error('⚠️ Erro ao salvar no Firebase (continuando com localStorage):', firebaseError);
+        const sessionData = {
+            username: username,
+            startTime: session.startTime.toISOString(),
+            endTime: session.endTime.toISOString(),
+            duration: session.duration,
+            strategy: session.strategy,
+            accountType: session.accountType,
+            asset: session.asset,
+            assetsUsed: session.assetsUsed || [session.asset],
+            initialBalance: session.initialBalance,
+            finalBalance: session.finalBalance || session.endBalance,
+            profit: session.profit,
+            profitPercent: session.profitPercent,
+            totalTrades: session.totalTrades,
+            wins: session.wins,
+            losses: session.losses,
+            winRate: session.winRate,
+            stopReason: session.stopReason || 'manual',
+            trades: session.trades || [],
+            timestamp: new Date().toISOString(),
+            device: {
+                userAgent: navigator.userAgent,
+                platform: navigator.platform,
+                language: navigator.language
             }
-        }
-    } catch (error) {
-        console.error('❌ Erro ao salvar histórico:', error);
+        };
+        
+        const docRef = await addDoc(collection(db, 'sessions'), sessionData);
+        console.log(`🔥 Sessão salva no Firebase com ID: ${docRef.id} para usuário: ${username}`);
+        return docRef.id;
+    } catch (firebaseError) {
+        console.error('⚠️ Erro ao salvar no Firebase:', firebaseError);
+        return null;
     }
 }
 
+// 💾 SALVA HISTÓRICO LOCAL (BACKUP)
+function saveSessionHistoryLocal() {
+    try {
+        const username = getCurrentUsername();
+        const storageKey = getUserStorageKey('championBotSessionHistory');
+        localStorage.setItem(storageKey, JSON.stringify(sessionHistory));
+        console.log(`✅ Histórico salvo localmente para: ${username} (${sessionHistory.length} sessões)`);
+    } catch (error) {
+        console.error('❌ Erro ao salvar histórico local:', error);
+    }
+}
+
+// 📊 CARREGA HISTÓRICO DO FIREBASE (PRIORITÁRIO) OU LOCALSTORAGE (FALLBACK)
 async function loadSessionHistory() {
     try {
         const username = getCurrentUsername();
@@ -747,26 +762,34 @@ async function loadSessionHistory() {
                     strategy: data.strategy,
                     accountType: data.accountType,
                     asset: data.asset,
+                    assetsUsed: data.assetsUsed || [data.asset],
                     initialBalance: data.initialBalance,
                     finalBalance: data.finalBalance,
+                    endBalance: data.finalBalance, // compatibilidade
                     profit: data.profit,
                     profitPercent: data.profitPercent,
                     totalTrades: data.totalTrades,
                     wins: data.wins,
                     losses: data.losses,
-                    winRate: data.winRate
+                    winRate: data.winRate,
+                    stopReason: data.stopReason || 'manual',
+                    trades: data.trades || []
                 });
             });
             
             if (firebaseSessions.length > 0) {
                 sessionHistory = firebaseSessions;
-                localStorage.setItem(storageKey, JSON.stringify(sessionHistory));
-                console.log(`🔥 ${firebaseSessions.length} sessões carregadas do Firebase para: ${username}`);
+                // Salva também no localStorage como cache
+                saveSessionHistoryLocal();
+                console.log(`🔥✅ ${firebaseSessions.length} sessões carregadas do Firebase para: ${username}`);
                 renderSessionHistory();
                 return;
+            } else {
+                console.log(`🔥 Nenhuma sessão encontrada no Firebase para: ${username}`);
             }
         } catch (firebaseError) {
-            console.warn('⚠️ Não foi possível carregar do Firebase, tentando localStorage...', firebaseError);
+            console.error('⚠️ Erro ao carregar do Firebase:', firebaseError);
+            console.warn('Tentando carregar do localStorage...');
         }
         
         // 2️⃣ Fallback: Carrega do localStorage
@@ -780,7 +803,7 @@ async function loadSessionHistory() {
                     session.endTime = new Date(session.endTime);
                 }
             });
-            console.log(`✅ Histórico carregado localmente para: ${username} - ${sessionHistory.length} sessões`);
+            console.log(`💾 Histórico carregado do localStorage para: ${username} - ${sessionHistory.length} sessões`);
             renderSessionHistory();
         } else {
             console.log(`ℹ️ Nenhum histórico encontrado para: ${username}`);
