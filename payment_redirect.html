@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💳 Pagamento - Champion Bot</title>
+    <link rel="stylesheet" href="responsive.css">
+    <link rel="stylesheet" href="mobile-optimized.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html {
+            overflow-x: hidden;
+            overflow-y: scroll;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0a0f;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(102, 126, 234, 0.2) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(118, 75, 162, 0.2) 0px, transparent 50%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            padding: 20px;
+            padding-bottom: 50px;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .payment-box {
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+            backdrop-filter: blur(30px);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 30px;
+            padding: 50px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 36px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: rgba(255,255,255,0.7);
+            font-size: 16px;
+        }
+
+        .plan-summary {
+            background: rgba(102, 126, 234, 0.1);
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .plan-summary h3 {
+            color: #fff;
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            color: rgba(255,255,255,0.8);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .summary-item:last-child {
+            border-bottom: none;
+            font-size: 24px;
+            font-weight: 700;
+            color: #fff;
+            margin-top: 10px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 18px;
+            font-size: 18px;
+            font-weight: 600;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.15);
+        }
+
+        .instructions {
+            background: rgba(255,255,255,0.05);
+            border-left: 4px solid #667eea;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 30px 0;
+        }
+
+        .instructions h4 {
+            color: #fff;
+            margin-bottom: 15px;
+        }
+
+        .instructions ol {
+            color: rgba(255,255,255,0.8);
+            margin-left: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 10px;
+        }
+
+        .mp-logo {
+            width: 200px;
+            margin: 20px auto;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="payment-box">
+            <div class="header">
+                <h1>💳 Finalizar Pagamento</h1>
+                <p>Você será redirecionado para o Mercado Pago</p>
+            </div>
+
+            <!-- Resumo do Pedido -->
+            <div class="plan-summary">
+                <h3>📋 Resumo do Pedido</h3>
+                <div class="summary-item">
+                    <span>Plano:</span>
+                    <strong id="planName">-</strong>
+                </div>
+                <div class="summary-item">
+                    <span>Usuário:</span>
+                    <strong id="userName">-</strong>
+                </div>
+                <div class="summary-item">
+                    <span>E-mail:</span>
+                    <strong id="userEmail">-</strong>
+                </div>
+                <div class="summary-item">
+                    <span>Total:</span>
+                    <strong id="totalPrice">R$ 0,00</strong>
+                </div>
+            </div>
+
+            <!-- Instruções -->
+            <div class="instructions">
+                <h4>💳 Como Funciona:</h4>
+                <ol>
+                    <li>Clique no botão "Pagar com Mercado Pago"</li>
+                    <li>Você será redirecionado para a página segura do Mercado Pago</li>
+                    <li>Escolha PIX, cartão de crédito ou outro método</li>
+                    <li>Complete o pagamento</li>
+                    <li>Após aprovação, você retorna aqui automaticamente</li>
+                    <li>Sua conta será ativada!</li>
+                </ol>
+            </div>
+
+            <!-- Logo Mercado Pago -->
+            <img src="https://http2.mlstatic.com/frontend-assets/ui-navigation/5.19.1/mercadopago/logo__large@2x.png" 
+                 alt="Mercado Pago" 
+                 class="mp-logo">
+
+            <!-- Botão de Pagamento -->
+            <button class="btn" onclick="redirectToMercadoPago()">
+                💳 Pagar com Mercado Pago
+            </button>
+
+            <button class="btn btn-secondary" onclick="cancelPayment()">
+                ❌ Cancelar
+            </button>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyCWPobM_NmbPG15ulqn9e9z7MKtAdgXjv8",
+            authDomain: "champion-bot-2835b.firebaseapp.com",
+            projectId: "champion-bot-2835b",
+            storageBucket: "champion-bot-2835b.firebasestorage.app",
+            messagingSenderId: "487873350",
+            appId: "1:487873350:web:4e698547c1c143d7b580da"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        
+        window.firebaseDB = db;
+        window.firebaseAddDoc = addDoc;
+        window.firebaseCollection = collection;
+        window.firebaseServerTimestamp = serverTimestamp;
+    </script>
+
+    <script src="auth.js"></script>
+
+    <script>
+        let registrationData = null;
+
+        // Links de pagamento do Mercado Pago
+        const PAYMENT_LINKS = {
+            monthly: 'https://www.mercadopago.com.br/subscriptions/checkout?preapproval_plan_id=cde77946d7624bc6aaf5805e635af5fe',
+            unlimited: 'https://www.mercadopago.com.br/checkout/v1/redirect?pref_id=487873350-4e698547-7cc1-43d7-b580-da24619cd8c4'
+        };
+
+        // Inicialização
+        (function init() {
+            const pending = sessionStorage.getItem('pendingRegistration');
+            
+            if (!pending) {
+                alert('❌ Sessão expirada!');
+                window.location.href = 'auth.html';
+                return;
+            }
+            
+            registrationData = JSON.parse(pending);
+            
+            // Atualiza UI
+            document.getElementById('planName').textContent = 
+                registrationData.plan === 'monthly' ? '📅 Plano Mensal' : '♾️ Plano Ilimitado';
+            document.getElementById('userName').textContent = registrationData.username;
+            document.getElementById('userEmail').textContent = registrationData.email;
+            document.getElementById('totalPrice').textContent = 
+                'R$ ' + registrationData.price.toFixed(2).replace('.', ',');
+        })();
+
+        // Redireciona para Mercado Pago
+        function redirectToMercadoPago() {
+            if (!registrationData) {
+                alert('❌ Erro: Dados não encontrados!');
+                return;
+            }
+
+            const plan = registrationData.plan;
+            const paymentLink = PAYMENT_LINKS[plan];
+
+            if (!paymentLink) {
+                alert('❌ Erro: Link de pagamento não configurado para este plano!');
+                return;
+            }
+
+            console.log('💳 Redirecionando para Mercado Pago:', paymentLink);
+            console.log('📋 Dados do pedido:', registrationData);
+
+            // Salva dados para recuperar após retorno
+            localStorage.setItem('pendingPayment', JSON.stringify({
+                ...registrationData,
+                paymentStartTime: new Date().toISOString()
+            }));
+
+            // Redireciona para Mercado Pago
+            window.location.href = paymentLink;
+        }
+
+        function cancelPayment() {
+            if (confirm('Deseja cancelar o pagamento?')) {
+                sessionStorage.removeItem('pendingRegistration');
+                window.location.href = 'auth.html';
+            }
+        }
+    </script>
+</body>
+</html>

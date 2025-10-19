@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>❌ Pagamento Não Aprovado</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0a0f;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(244, 67, 54, 0.3) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(102, 126, 234, 0.2) 0px, transparent 50%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+            backdrop-filter: blur(30px);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 30px;
+            padding: 60px 40px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+        }
+
+        .icon {
+            font-size: 100px;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 36px;
+            font-weight: 800;
+            color: #ff6b6b;
+            margin-bottom: 20px;
+        }
+
+        p {
+            color: rgba(255,255,255,0.8);
+            font-size: 18px;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 18px 40px;
+            font-size: 18px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            margin: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">❌</div>
+        <h1>Pagamento Não Aprovado</h1>
+        <p>
+            Seu pagamento não foi aprovado pelo Mercado Pago.<br>
+            Não se preocupe, você pode tentar novamente!
+        </p>
+
+        <p style="font-size: 16px; color: rgba(255,255,255,0.6);">
+            Possíveis motivos:<br>
+            • Saldo insuficiente<br>
+            • Dados incorretos<br>
+            • Limite excedido<br>
+            • Pagamento cancelado
+        </p>
+
+        <a href="auth.html" class="btn">🔄 Tentar Novamente</a>
+        <a href="index.html" class="btn btn-secondary">🏠 Voltar ao Início</a>
+    </div>
+
+    <script>
+        // Limpa dados temporários
+        localStorage.removeItem('pendingPayment');
+        sessionStorage.removeItem('pendingRegistration');
+
+        // Log do erro
+        const urlParams = new URLSearchParams(window.location.search);
+        console.log('❌ Pagamento rejeitado:', Object.fromEntries(urlParams));
+    </script>
+</body>
+</html>

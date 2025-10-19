@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✅ Pagamento Aprovado!</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0a0f;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(40, 167, 69, 0.3) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(102, 126, 234, 0.2) 0px, transparent 50%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+            backdrop-filter: blur(30px);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 30px;
+            padding: 60px 40px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+        }
+
+        .icon {
+            font-size: 100px;
+            margin-bottom: 30px;
+            animation: bounce 1s ease-in-out;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        h1 {
+            font-size: 36px;
+            font-weight: 800;
+            color: #51cf66;
+            margin-bottom: 20px;
+        }
+
+        p {
+            color: rgba(255,255,255,0.8);
+            font-size: 18px;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .details {
+            background: rgba(40, 167, 69, 0.1);
+            border: 1px solid rgba(40, 167, 69, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 30px 0;
+            text-align: left;
+        }
+
+        .details p {
+            margin: 10px 0;
+            font-size: 16px;
+        }
+
+        .details strong {
+            color: #51cf66;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 18px 40px;
+            font-size: 18px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .loader {
+            border: 4px solid rgba(255,255,255,0.1);
+            border-radius: 50%;
+            border-top: 4px solid #51cf66;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">✅</div>
+        <h1>Pagamento Aprovado!</h1>
+        <p>Seu pagamento foi confirmado pelo Mercado Pago.<br>Estamos criando sua conta...</p>
+
+        <div class="loader"></div>
+
+        <div id="details" class="details" style="display: none;">
+            <p><strong>Plano:</strong> <span id="planName">-</span></p>
+            <p><strong>Valor:</strong> <span id="planPrice">-</span></p>
+            <p><strong>ID do Pagamento:</strong> <span id="paymentId">-</span></p>
+        </div>
+
+        <p id="status" style="color: #51cf66; font-size: 16px;"></p>
+
+        <button class="btn" onclick="goToBot()" id="goButton" style="display: none;">
+            🚀 Acessar o Bot
+        </button>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        import { getAuth, createUserWithEmailAndPassword, updateProfile } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyCWPobM_NmbPG15ulqn9e9z7MKtAdgXjv8",
+            authDomain: "champion-bot-2835b.firebaseapp.com",
+            projectId: "champion-bot-2835b",
+            storageBucket: "champion-bot-2835b.firebasestorage.app",
+            messagingSenderId: "487873350",
+            appId: "1:487873350:web:4e698547c1c143d7b580da"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        
+        window.firebaseDB = db;
+        window.firebaseAuth = auth;
+        window.firebaseAddDoc = addDoc;
+        window.firebaseCollection = collection;
+        window.firebaseServerTimestamp = serverTimestamp;
+        window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
+        window.updateProfile = updateProfile;
+
+        console.log('✅ Firebase inicializado com Authentication');
+    </script>
+
+    <script src="auth.js"></script>
+
+    <script>
+        // Captura parâmetros da URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const paymentId = urlParams.get('payment_id') || urlParams.get('collection_id');
+        const status = urlParams.get('collection_status') || urlParams.get('status');
+        const externalReference = urlParams.get('external_reference');
+
+        console.log('💳 Retorno do Mercado Pago:', { paymentId, status, externalReference });
+
+        // Recupera dados do pagamento
+        const pendingPayment = localStorage.getItem('pendingPayment');
+
+        if (!pendingPayment) {
+            alert('❌ Erro: Dados do pagamento não encontrados!');
+            window.location.href = 'auth.html';
+        }
+
+        const registrationData = JSON.parse(pendingPayment);
+
+        // Atualiza UI
+        document.getElementById('planName').textContent = 
+            registrationData.plan === 'monthly' ? '📅 Plano Mensal' : '♾️ Plano Ilimitado';
+        document.getElementById('planPrice').textContent = 
+            'R$ ' + registrationData.price.toFixed(2).replace('.', ',');
+        document.getElementById('paymentId').textContent = paymentId || 'N/A';
+
+        // Processa pagamento aprovado
+        async function processApprovedPayment() {
+            try {
+                document.getElementById('status').textContent = 'Criando sua conta...';
+
+                // 1️⃣ CRIAR USUÁRIO NO FIREBASE AUTHENTICATION (aparece na aba Authentication)
+                console.log('👤 Criando usuário no Firebase Authentication...');
+                try {
+                    const userCredential = await window.createUserWithEmailAndPassword(
+                        window.firebaseAuth,
+                        registrationData.email,
+                        registrationData.password
+                    );
+                    
+                    // Atualiza nome do usuário
+                    await window.updateProfile(userCredential.user, {
+                        displayName: registrationData.username
+                    });
+                    
+                    console.log('✅ Usuário criado no Authentication:', userCredential.user.uid);
+                } catch (authError) {
+                    // Se der erro (ex: email já existe), continua mesmo assim
+                    console.warn('⚠️ Erro ao criar no Authentication (pode já existir):', authError.message);
+                }
+
+                // 2️⃣ Hash da senha para Firestore
+                const passwordHash = await hashPassword(registrationData.password);
+
+                // 3️⃣ Calcula data de expiração
+                let expiryDate = null;
+                if (registrationData.plan === 'monthly') {
+                    const now = new Date();
+                    let nextBillingDate = new Date(now.getFullYear(), now.getMonth(), 7);
+                    if (now.getDate() >= 7) {
+                        nextBillingDate = new Date(now.getFullYear(), now.getMonth() + 1, 7);
+                    }
+                    expiryDate = nextBillingDate.toISOString();
+                }
+
+                // 4️⃣ Cria documento no Firestore (banco de dados)
+                const newUser = {
+                    username: registrationData.username,
+                    email: registrationData.email,
+                    passwordHash: passwordHash,
+                    isAdmin: false,
+                    active: true,
+                    subscriptionType: registrationData.plan === 'monthly' ? 'monthly' : 'permanent',
+                    expiryDate: expiryDate,
+                    createdAt: window.firebaseServerTimestamp(),
+                    lastLogin: null,
+                    lastActivity: window.firebaseServerTimestamp(),
+                    metadata: {
+                        source: 'mercado-pago',
+                        plan: registrationData.plan,
+                        price: registrationData.price,
+                        paymentId: paymentId,
+                        paymentMethod: 'mercado-pago',
+                        paymentStatus: status || 'approved',
+                        paymentDate: new Date().toISOString()
+                    }
+                };
+
+                // 5️⃣ Salva no Firestore
+                console.log('🔥 Salvando dados do usuário no Firestore...');
+                const docRef = await window.firebaseAddDoc(
+                    window.firebaseCollection(window.firebaseDB, 'users'),
+                    newUser
+                );
+
+                console.log('✅ Usuário criado no Firebase:', docRef.id);
+
+                // Salva no localStorage
+                const v3Data = JSON.parse(localStorage.getItem('championBotUsersV3') || '{"users": [], "meta": {}}');
+                newUser.id = docRef.id;
+                newUser.createdAt = new Date().toISOString();
+                newUser.lastActivity = new Date().toISOString();
+                v3Data.users.push(newUser);
+                v3Data.meta = {
+                    version: 3,
+                    totalUsers: v3Data.users.length,
+                    lastUpdate: new Date().toISOString()
+                };
+                localStorage.setItem('championBotUsersV3', JSON.stringify(v3Data));
+
+                // Auto-login
+                const session = {
+                    username: newUser.username,
+                    email: newUser.email,
+                    isAdmin: false,
+                    active: true,
+                    subscriptionType: newUser.subscriptionType,
+                    expiryDate: expiryDate,
+                    loginTime: new Date().toISOString(),
+                    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+                };
+
+                localStorage.setItem('championBotSession', JSON.stringify(session));
+
+                // Log de pagamento
+                try {
+                    await window.firebaseAddDoc(
+                        window.firebaseCollection(window.firebaseDB, 'logs'),
+                        {
+                            type: 'payment_approved',
+                            username: newUser.username,
+                            plan: registrationData.plan,
+                            price: registrationData.price,
+                            paymentId: paymentId,
+                            timestamp: window.firebaseServerTimestamp()
+                        }
+                    );
+                } catch (logError) {
+                    console.warn('⚠️ Erro ao salvar log:', logError);
+                }
+
+                // Limpa dados temporários
+                localStorage.removeItem('pendingPayment');
+                sessionStorage.removeItem('pendingRegistration');
+
+                // Mostra sucesso
+                document.querySelector('.loader').style.display = 'none';
+                document.getElementById('details').style.display = 'block';
+                document.getElementById('status').textContent = '✅ Conta criada com sucesso!';
+                document.getElementById('goButton').style.display = 'inline-block';
+
+            } catch (error) {
+                console.error('❌ Erro ao criar conta:', error);
+                document.querySelector('.loader').style.display = 'none';
+                document.getElementById('status').textContent = '❌ Erro ao criar conta: ' + error.message;
+                document.getElementById('status').style.color = '#ff6b6b';
+
+                setTimeout(() => {
+                    window.location.href = 'auth.html';
+                }, 3000);
+            }
+        }
+
+        function goToBot() {
+            window.location.href = 'index.html';
+        }
+
+        // Inicia processamento
+        setTimeout(() => {
+            processApprovedPayment();
+        }, 2000);
+    </script>
+</body>
+</html>

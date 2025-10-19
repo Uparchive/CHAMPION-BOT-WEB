@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⏳ Pagamento Pendente</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0a0f;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(255, 193, 7, 0.3) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(102, 126, 234, 0.2) 0px, transparent 50%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+            backdrop-filter: blur(30px);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 30px;
+            padding: 60px 40px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+        }
+
+        .icon {
+            font-size: 100px;
+            margin-bottom: 30px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        h1 {
+            font-size: 36px;
+            font-weight: 800;
+            color: #ffd93d;
+            margin-bottom: 20px;
+        }
+
+        p {
+            color: rgba(255,255,255,0.8);
+            font-size: 18px;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 18px 40px;
+            font-size: 18px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            margin: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .info-box {
+            background: rgba(255, 193, 7, 0.1);
+            border: 1px solid rgba(255, 193, 7, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 30px 0;
+        }
+
+        .info-box p {
+            margin: 10px 0;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">⏳</div>
+        <h1>Pagamento Pendente</h1>
+        <p>
+            Seu pagamento está sendo processado pelo Mercado Pago.<br>
+            Isso pode levar alguns minutos.
+        </p>
+
+        <div class="info-box">
+            <p><strong>📱 Se você escolheu PIX:</strong></p>
+            <p>Complete o pagamento no app do seu banco.</p>
+            <p>Após pagar, sua conta será ativada automaticamente.</p>
+            <br>
+            <p><strong>💳 Se você escolheu Cartão:</strong></p>
+            <p>Aguarde a confirmação da operadora.</p>
+        </div>
+
+        <p style="font-size: 16px; color: rgba(255,255,255,0.6);">
+            ✉️ Você receberá um e-mail de confirmação quando o pagamento for aprovado.
+        </p>
+
+        <a href="index.html" class="btn">🏠 Voltar ao Início</a>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        console.log('⏳ Pagamento pendente:', Object.fromEntries(urlParams));
+    </script>
+</body>
+</html>

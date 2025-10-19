@@ -704,7 +704,23 @@
 
         // Seleciona plano ilimitado por padrão
         window.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 DOM Carregado - Inicializando...');
             selectPlan('unlimited');
+            
+            // Garante que a função está acessível
+            window.handleRegister = handleRegister;
+            console.log('✅ handleRegister disponível globalmente');
+            
+            // Adiciona listener no formulário como fallback
+            const registerForm = document.querySelector('form[onsubmit*="handleRegister"]');
+            if (registerForm) {
+                registerForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    console.log('📝 Formulário submetido via listener');
+                    handleRegister(e);
+                });
+                console.log('✅ Listener no formulário adicionado');
+            }
         });
 
         // ═══════════════════════════════════════════════════════════════
@@ -770,14 +786,19 @@
         async function handleRegister(event) {
             event.preventDefault();
             
+            console.log('🔍 handleRegister chamado!');
+            
             const plan = document.getElementById('selectedPlan').value;
             const username = document.getElementById('regUsername').value.trim();
             const email = document.getElementById('regEmail').value.trim();
             const password = document.getElementById('regPassword').value;
             const confirmPassword = document.getElementById('regConfirmPassword').value;
             
+            console.log('📋 Dados:', { plan, username, email });
+            
             // Validações
             if (!plan) {
+                console.error('❌ Nenhum plano selecionado!');
                 showAlert('❌ Selecione um plano!', 'error');
                 return;
             }
@@ -805,11 +826,15 @@
                 price: plan === 'monthly' ? 25.00 : 259.90
             };
             
+            console.log('💾 Salvando dados:', planData);
+            
             // Salva temporariamente no sessionStorage
             sessionStorage.setItem('pendingRegistration', JSON.stringify(planData));
             
-            // Redireciona para página de pagamento
-            window.location.href = 'payment.html';
+            console.log('✅ Redirecionando para pagamento...');
+            
+            // Redireciona para página de pagamento (MERCADO PAGO)
+            window.location.href = 'payment_redirect.html';
         }
 
         // ═══════════════════════════════════════════════════════════════

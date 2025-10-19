@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerar Link de Pagamento Mercado Pago</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        button {
+            background: #009ee3;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #0086c3;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e8f5e9;
+            border-radius: 5px;
+            word-break: break-all;
+        }
+        .error {
+            background: #ffebee;
+            color: #c62828;
+        }
+        .code {
+            background: #263238;
+            color: #aed581;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔗 Gerar Links de Pagamento Mercado Pago</h1>
+        <p>Esta ferramenta gera os links de pagamento reais do Mercado Pago.</p>
+        
+        <h3>Escolha o plano:</h3>
+        <button onclick="generatePaymentLink('monthly')">📅 Plano Mensal - R$ 25,00</button>
+        <button onclick="generatePaymentLink('unlimited')">♾️ Plano Ilimitado - R$ 259,90</button>
+        
+        <div id="result"></div>
+        
+        <hr style="margin: 30px 0;">
+        
+        <h3>📋 Instruções:</h3>
+        <ol>
+            <li>Clique no botão do plano desejado</li>
+            <li>Copie o <strong>init_point</strong> gerado</li>
+            <li>Cole no código do payment.html</li>
+        </ol>
+    </div>
+
+    <script>
+        const MERCADO_PAGO_ACCESS_TOKEN = 'APP_USR-7301337016090260-101916-595fc615c118f5b6eb0bcdc0ba6a32ee-487873350';
+        
+        async function generatePaymentLink(plan) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>⏳ Gerando link de pagamento...</p>';
+            
+            // Configurações do plano
+            const planConfig = {
+                monthly: {
+                    title: 'Champion Bot - Plano Mensal',
+                    description: 'Acesso ao bot por 30 dias com renovação automática',
+                    price: 25.00
+                },
+                unlimited: {
+                    title: 'Champion Bot - Plano Ilimitado',
+                    description: 'Acesso vitalício ao bot - Pagamento único',
+                    price: 259.90
+                }
+            };
+            
+            const config = planConfig[plan];
+            
+            // Dados da preferência
+            const preferenceData = {
+                items: [
+                    {
+                        title: config.title,
+                        description: config.description,
+                        quantity: 1,
+                        currency_id: 'BRL',
+                        unit_price: config.price
+                    }
+                ],
+                back_urls: {
+                    success: window.location.origin + '/payment_success.html',
+                    failure: window.location.origin + '/payment_failure.html',
+                    pending: window.location.origin + '/payment_pending.html'
+                },
+                auto_return: 'approved',
+                notification_url: window.location.origin + '/webhook/mercadopago',
+                external_reference: plan + '_' + Date.now(),
+                statement_descriptor: 'CHAMPION BOT',
+                payment_methods: {
+                    excluded_payment_types: [],
+                    installments: plan === 'unlimited' ? 12 : 1
+                }
+            };
+            
+            try {
+                // ⚠️ Esta chamada vai dar CORS no navegador
+                // Você precisa fazer isso no backend ou usar a ferramenta online do Mercado Pago
+                
+                console.log('📤 Dados da preferência:', preferenceData);
+                
+                // Mostra instruções para criar manualmente
+                resultDiv.innerHTML = `
+                    <div class="result">
+                        <h3>⚠️ CORS Bloqueado</h3>
+                        <p>Você precisa criar a preferência usando uma das opções abaixo:</p>
+                        
+                        <h4>Opção 1: cURL (Command Line)</h4>
+                        <div class="code">curl -X POST \\
+    -H "Authorization: Bearer ${MERCADO_PAGO_ACCESS_TOKEN}" \\
+    -H "Content-Type: application/json" \\
+    -d '{
+        "items": [
+            {
+                "title": "${config.title}",
+                "quantity": 1,
+                "currency_id": "BRL",
+                "unit_price": ${config.price}
+            }
+        ],
+        "back_urls": {
+            "success": "${window.location.origin}/payment_success.html",
+            "failure": "${window.location.origin}/payment_failure.html"
+        },
+        "auto_return": "approved",
+        "external_reference": "${plan}_${Date.now()}"
+    }' \\
+    https://api.mercadopago.com/checkout/preferences</div>
+                        
+                        <h4>Opção 2: Postman / Insomnia</h4>
+                        <p><strong>URL:</strong> POST https://api.mercadopago.com/checkout/preferences</p>
+                        <p><strong>Headers:</strong></p>
+                        <div class="code">Authorization: Bearer ${MERCADO_PAGO_ACCESS_TOKEN}
+Content-Type: application/json</div>
+                        <p><strong>Body (JSON):</strong></p>
+                        <div class="code">${JSON.stringify(preferenceData, null, 2)}</div>
+                        
+                        <h4>Opção 3: Usar botão pronto do Mercado Pago</h4>
+                        <p>Vou configurar o payment.html para usar o botão do Mercado Pago que redireciona automaticamente!</p>
+                    </div>
+                `;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        <h3>❌ Erro</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
