@@ -7,6 +7,434 @@
     <link rel="stylesheet" href="style.css">
     <!-- 🆕 jsPDF para exportar PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- 🔐 Sistema de Autenticação -->
+    <script src="auth.js"></script>
+    <script>
+        // Verifica autenticação antes de carregar a página
+        document.addEventListener('DOMContentLoaded', () => {
+            const session = window.ChampionBotAuth.getActiveSession();
+            if (!session) {
+                alert('🔐 Acesso restrito! Você precisa fazer login para usar o Champion Bot.');
+                window.location.href = 'auth.html';
+            } else {
+                // Exibe informações do usuário logado
+                console.log('✅ Usuário autenticado:', session.username);
+                displayUserInfo(session);
+            }
+        });
+
+        function displayUserInfo(session) {
+            // Busca informações detalhadas do usuário
+            const user = getUserDetailedInfo(session.username);
+            
+            // Adiciona botão toggle no header
+            const userToggleBtn = document.createElement('div');
+            userToggleBtn.id = 'userToggleBtn';
+            userToggleBtn.className = 'user-toggle-btn';
+            
+            // Calcula dias restantes se aplicável
+            let statusColor = '#48bb78'; // Verde padrão
+            let statusText = 'Ativo';
+            
+            if (user.subscriptionType !== 'permanent' && user.expiryDate) {
+                const daysLeft = Math.ceil((new Date(user.expiryDate) - new Date()) / (1000 * 60 * 60 * 24));
+                if (daysLeft < 0) {
+                    statusColor = '#ef4444';
+                    statusText = 'Expirado';
+                } else if (daysLeft <= 7) {
+                    statusColor = '#ffc107';
+                    statusText = `${daysLeft}d`;
+                }
+            }
+            
+            userToggleBtn.innerHTML = `
+                <style>
+                    .user-toggle-btn {
+                        position: fixed;
+                        top: 20px;
+                        right: 20px;
+                        z-index: 10000;
+                        cursor: pointer;
+                        user-select: none;
+                    }
+                    
+                    .user-avatar-btn {
+                        width: 50px;
+                        height: 50px;
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 24px;
+                        box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+                        border: 3px solid rgba(255, 255, 255, 0.2);
+                        transition: all 0.3s ease;
+                        position: relative;
+                    }
+                    
+                    .user-toggle-btn:hover .user-avatar-btn {
+                        transform: scale(1.1);
+                        box-shadow: 0 6px 30px rgba(102, 126, 234, 0.6);
+                    }
+                    
+                    .user-status-indicator {
+                        position: absolute;
+                        bottom: 2px;
+                        right: 2px;
+                        width: 14px;
+                        height: 14px;
+                        background: ${statusColor};
+                        border-radius: 50%;
+                        border: 2px solid #1a1a3e;
+                        animation: pulse-status 2s infinite;
+                    }
+                    
+                    @keyframes pulse-status {
+                        0%, 100% {
+                            opacity: 1;
+                            transform: scale(1);
+                        }
+                        50% {
+                            opacity: 0.7;
+                            transform: scale(1.15);
+                        }
+                    }
+                    
+                    .user-dropdown-panel {
+                        position: absolute;
+                        top: 65px;
+                        right: 0;
+                        background: linear-gradient(135deg, #1a1a3e 0%, #16213e 100%);
+                        border: 2px solid rgba(102, 126, 234, 0.3);
+                        border-radius: 16px;
+                        padding: 20px;
+                        min-width: 300px;
+                        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+                        backdrop-filter: blur(10px);
+                        opacity: 0;
+                        visibility: hidden;
+                        transform: translateY(-10px);
+                        transition: all 0.3s ease;
+                    }
+                    
+                    .user-dropdown-panel.show {
+                        opacity: 1;
+                        visibility: visible;
+                        transform: translateY(0);
+                    }
+                    
+                    .dropdown-header {
+                        display: flex;
+                        align-items: center;
+                        gap: 12px;
+                        margin-bottom: 16px;
+                        padding-bottom: 16px;
+                        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                    }
+                    
+                    .dropdown-avatar {
+                        width: 48px;
+                        height: 48px;
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        border-radius: 12px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 24px;
+                        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+                    }
+                    
+                    .dropdown-user-details {
+                        flex: 1;
+                    }
+                    
+                    .dropdown-username {
+                        font-size: 15px;
+                        font-weight: 700;
+                        color: #ffffff;
+                        margin-bottom: 4px;
+                    }
+                    
+                    .dropdown-role-badge {
+                        display: inline-block;
+                        font-size: 10px;
+                        padding: 3px 8px;
+                        border-radius: 10px;
+                        font-weight: 600;
+                        text-transform: uppercase;
+                        background: rgba(102, 126, 234, 0.2);
+                        color: #667eea;
+                        border: 1px solid rgba(102, 126, 234, 0.3);
+                    }
+                    
+                    .dropdown-role-badge.admin {
+                        background: rgba(255, 193, 7, 0.2);
+                        color: #ffc107;
+                        border-color: rgba(255, 193, 7, 0.3);
+                    }
+                    
+                    .dropdown-status {
+                        display: flex;
+                        align-items: center;
+                        gap: 6px;
+                        font-size: 11px;
+                        color: ${statusColor};
+                        margin-top: 4px;
+                    }
+                    
+                    .dropdown-info-list {
+                        margin-bottom: 16px;
+                    }
+                    
+                    .dropdown-info-item {
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        font-size: 12px;
+                        color: #a8dadc;
+                        margin-bottom: 8px;
+                    }
+                    
+                    .dropdown-info-icon {
+                        font-size: 14px;
+                        width: 20px;
+                        text-align: center;
+                    }
+                    
+                    .dropdown-expiry-info {
+                        font-size: 11px;
+                        padding: 8px 12px;
+                        border-radius: 8px;
+                        margin-bottom: 16px;
+                        text-align: center;
+                        font-weight: 600;
+                    }
+                    
+                    .dropdown-expiry-info.permanent {
+                        background: rgba(102, 126, 234, 0.15);
+                        color: #667eea;
+                        border: 1px solid rgba(102, 126, 234, 0.3);
+                    }
+                    
+                    .dropdown-expiry-info.active {
+                        background: rgba(72, 187, 120, 0.15);
+                        color: #48bb78;
+                        border: 1px solid rgba(72, 187, 120, 0.3);
+                    }
+                    
+                    .dropdown-expiry-info.warning {
+                        background: rgba(255, 193, 7, 0.15);
+                        color: #ffc107;
+                        border: 1px solid rgba(255, 193, 7, 0.3);
+                        animation: pulse-warning 2s infinite;
+                    }
+                    
+                    .dropdown-expiry-info.expired {
+                        background: rgba(239, 68, 68, 0.15);
+                        color: #ef4444;
+                        border: 1px solid rgba(239, 68, 68, 0.3);
+                    }
+                    
+                    @keyframes pulse-warning {
+                        0%, 100% { opacity: 1; }
+                        50% { opacity: 0.7; }
+                    }
+                    
+                    .dropdown-actions {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 8px;
+                    }
+                    
+                    .btn-dropdown-action {
+                        width: 100%;
+                        padding: 10px 16px;
+                        border: 1px solid rgba(255, 255, 255, 0.1);
+                        border-radius: 8px;
+                        background: rgba(255, 255, 255, 0.05);
+                        color: #ffffff;
+                        font-size: 13px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: all 0.3s;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 8px;
+                    }
+                    
+                    .btn-dropdown-action:hover {
+                        background: rgba(102, 126, 234, 0.2);
+                        border-color: rgba(102, 126, 234, 0.5);
+                        transform: translateX(4px);
+                    }
+                    
+                    .btn-dropdown-action.admin {
+                        background: rgba(255, 193, 7, 0.1);
+                        border-color: rgba(255, 193, 7, 0.3);
+                    }
+                    
+                    .btn-dropdown-action.admin:hover {
+                        background: rgba(255, 193, 7, 0.2);
+                        border-color: rgba(255, 193, 7, 0.5);
+                    }
+                    
+                    .btn-dropdown-action.logout {
+                        background: rgba(239, 68, 68, 0.1);
+                        border-color: rgba(239, 68, 68, 0.3);
+                    }
+                    
+                    .btn-dropdown-action.logout:hover {
+                        background: rgba(239, 68, 68, 0.2);
+                        border-color: rgba(239, 68, 68, 0.5);
+                    }
+                </style>
+                
+                <div class="user-avatar-btn" onclick="toggleUserDropdown(event)">
+                    <span>${user.isAdmin ? '👨‍💼' : '👤'}</span>
+                    <div class="user-status-indicator" title="${statusText}"></div>
+                </div>
+                
+                <div class="user-dropdown-panel" id="userDropdownPanel">
+                    <div class="dropdown-header">
+                        <div class="dropdown-avatar">
+                            <span>${user.isAdmin ? '👨‍💼' : '👤'}</span>
+                        </div>
+                        <div class="dropdown-user-details">
+                            <div class="dropdown-username">${escapeHtml(session.username)}</div>
+                            <span class="dropdown-role-badge ${user.isAdmin ? 'admin' : ''}">${user.isAdmin ? '👨‍💼 Admin' : '👤 Usuário'}</span>
+                            <div class="dropdown-status">
+                                <span>●</span>
+                                <span>Online agora</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="dropdown-info-list">
+                        <div class="dropdown-info-item">
+                            <span class="dropdown-info-icon">💾</span>
+                            <span>Histórico pessoal ativo</span>
+                        </div>
+                        <div class="dropdown-info-item">
+                            <span class="dropdown-info-icon">📅</span>
+                            <span>Tipo: ${getSubscriptionTypeName(user.subscriptionType)}</span>
+                        </div>
+                        ${user.email ? `
+                        <div class="dropdown-info-item">
+                            <span class="dropdown-info-icon">📧</span>
+                            <span>${escapeHtml(user.email)}</span>
+                        </div>
+                        ` : ''}
+                    </div>
+                    
+                    ${getExpiryInfoHTML(user)}
+                    
+                    <div class="dropdown-actions">
+                        ${user.isAdmin ? `
+                        <button onclick="openAdminPanel()" class="btn-dropdown-action admin">
+                            <span>👨‍💼</span>
+                            <span>Painel Administrativo</span>
+                        </button>
+                        ` : ''}
+                        <button onclick="logoutUser()" class="btn-dropdown-action logout">
+                            <span>🚪</span>
+                            <span>Sair da Conta</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(userToggleBtn);
+            
+            // Fechar dropdown ao clicar fora
+            document.addEventListener('click', function(e) {
+                const panel = document.getElementById('userDropdownPanel');
+                const btn = document.getElementById('userToggleBtn');
+                if (panel && !btn.contains(e.target)) {
+                    panel.classList.remove('show');
+                }
+            });
+        }
+
+        function toggleUserDropdown(event) {
+            event.stopPropagation();
+            const panel = document.getElementById('userDropdownPanel');
+            if (panel) {
+                panel.classList.toggle('show');
+            }
+        }
+
+        function getExpiryInfoHTML(user) {
+            if (user.subscriptionType === 'permanent') {
+                return `<div class="dropdown-expiry-info permanent">♾️ Acesso Vitalício</div>`;
+            }
+            
+            if (!user.expiryDate) return '';
+            
+            const daysLeft = Math.ceil((new Date(user.expiryDate) - new Date()) / (1000 * 60 * 60 * 24));
+            
+            if (daysLeft < 0) {
+                return `<div class="dropdown-expiry-info expired">⚠️ Assinatura Expirada</div>`;
+            } else if (daysLeft <= 7) {
+                return `<div class="dropdown-expiry-info warning">⚠️ Expira em ${daysLeft} dia${daysLeft !== 1 ? 's' : ''}</div>`;
+            } else {
+                return `<div class="dropdown-expiry-info active">✓ Válido por ${daysLeft} dias</div>`;
+            }
+        }
+
+        function getUserDetailedInfo(username) {
+            // Tenta buscar do novo sistema primeiro
+            const newSystemData = JSON.parse(localStorage.getItem('championBotUsersV3') || '{"users": []}');
+            const userFromNew = newSystemData.users.find(u => u.username === username);
+            
+            if (userFromNew) return userFromNew;
+            
+            // Fallback para sistema antigo
+            const user = window.ChampionBotAuth.getUserByUsername(username);
+            return {
+                username: username,
+                email: user?.email || '',
+                isAdmin: user?.isAdmin || false,
+                subscriptionType: 'permanent',
+                expiryDate: null
+            };
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function getSubscriptionTypeName(type) {
+            const names = {
+                permanent: '♾️ Permanente',
+                monthly: '📅 Mensal',
+                trial: '🧪 Trial'
+            };
+            return names[type] || type;
+        }
+
+        function isUserAdmin(username) {
+            const user = getUserDetailedInfo(username);
+            return user && user.isAdmin;
+        }
+
+        function logoutUser() {
+            const panel = document.getElementById('userDropdownPanel');
+            if (panel) panel.classList.remove('show');
+            
+            if (confirm('🚪 Deseja realmente sair da sua conta?')) {
+                window.ChampionBotAuth.destroySession();
+                window.location.href = 'auth.html';
+            }
+        }
+
+        function openAdminPanel() {
+            window.location.href = 'admin.html';
+        }
+    </script>
 </head>
 <body>
     <!-- Modal de Configurações -->

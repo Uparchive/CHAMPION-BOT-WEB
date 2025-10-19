@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 Champion Bot - Início</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 800px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .logo {
+            font-size: 64px;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 16px;
+        }
+
+        .info-box {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        .info-box h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .credentials {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        .credentials h3 {
+            color: #856404;
+            margin-bottom: 15px;
+        }
+
+        .credential-item {
+            background: white;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .credential-item strong {
+            color: #333;
+        }
+
+        .credential-value {
+            color: #667eea;
+            font-family: monospace;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .btn {
+            padding: 16px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        .btn-secondary:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .steps {
+            margin: 30px 0;
+        }
+
+        .step {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .step-number {
+            width: 40px;
+            height: 40px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .step-content h4 {
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .step-content p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+            color: #999;
+            font-size: 13px;
+        }
+
+        @media (max-width: 600px) {
+            .buttons {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">⚡</div>
+            <h1>Bem-vindo ao Champion Bot</h1>
+            <p class="subtitle">Sistema de Trading Automatizado v2.0</p>
+        </div>
+
+        <div class="info-box">
+            <h3>
+                <span>🔐</span>
+                Sistema de Autenticação Ativado
+            </h3>
+            <p>
+                O Champion Bot agora está protegido por autenticação. Apenas usuários autorizados podem acessar a plataforma.
+                Este sistema é perfeito para gerenciar clientes pagantes.
+            </p>
+        </div>
+
+        <div class="credentials">
+            <h3>⚠️ Credenciais do Usuário Mestre (Administrador)</h3>
+            <div class="credential-item">
+                <strong>👤 Usuário:</strong>
+                <span class="credential-value">Champion Mestre</span>
+            </div>
+            <div class="credential-item">
+                <strong>🔑 Senha:</strong>
+                <span class="credential-value">Champion@2025!</span>
+            </div>
+            <p style="margin-top: 15px; color: #856404; font-size: 13px;">
+                <strong>⚠️ IMPORTANTE:</strong> Use estas credenciais para o primeiro acesso. 
+                Recomendamos alterar a senha após o login no painel administrativo.
+            </p>
+        </div>
+
+        <div class="steps">
+            <h3 style="color: #333; margin-bottom: 20px;">📋 Como Começar:</h3>
+            
+            <div class="step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h4>Faça Login</h4>
+                    <p>Clique em "Fazer Login" e use as credenciais do usuário mestre acima</p>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h4>Acesse o Painel Admin</h4>
+                    <p>Após o login, clique no botão "👨‍💼 Admin" para gerenciar usuários</p>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h4>Crie Novos Usuários</h4>
+                    <p>No painel admin, adicione usuários para seus clientes pagantes</p>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-number">4</div>
+                <div class="step-content">
+                    <h4>Comece a Usar!</h4>
+                    <p>Compartilhe as credenciais com seus clientes e eles poderão acessar o bot</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="buttons">
+            <a href="auth.html" class="btn btn-primary">
+                <span style="font-size: 20px;">🔓</span>
+                Fazer Login
+            </a>
+            <a href="AUTH_DOCUMENTATION.md" class="btn btn-secondary" target="_blank">
+                <span style="font-size: 20px;">📖</span>
+                Ver Documentação
+            </a>
+        </div>
+
+        <div class="footer">
+            <p>Champion Bot v2.0 - Sistema de Autenticação Integrado</p>
+            <p>Desenvolvido com ❤️ para traders profissionais</p>
+        </div>
+    </div>
+</body>
+</html>

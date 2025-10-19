@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💳 Pagamento - Champion Bot</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0a0f;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(102, 126, 234, 0.2) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(118, 75, 162, 0.2) 0px, transparent 50%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .payment-box {
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+            backdrop-filter: blur(30px);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 30px;
+            padding: 50px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 36px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: rgba(255,255,255,0.7);
+            font-size: 16px;
+        }
+
+        .plan-summary {
+            background: rgba(102, 126, 234, 0.1);
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .plan-summary h3 {
+            color: #fff;
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            color: rgba(255,255,255,0.8);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .summary-item:last-child {
+            border-bottom: none;
+            font-size: 24px;
+            font-weight: 700;
+            color: #fff;
+            margin-top: 10px;
+        }
+
+        .pix-section {
+            background: rgba(255,255,255,0.05);
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .pix-section h3 {
+            color: #fff;
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
+
+        .pix-qr {
+            width: 250px;
+            height: 250px;
+            background: white;
+            margin: 0 auto 20px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 100px;
+        }
+
+        .pix-code {
+            background: rgba(255,255,255,0.1);
+            border: 2px dashed rgba(255,255,255,0.3);
+            border-radius: 12px;
+            padding: 15px;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            word-break: break-all;
+            margin-bottom: 15px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+            margin-bottom: 15px;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(102, 126, 234, 0.5);
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            box-shadow: none;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.15);
+        }
+
+        .alert {
+            padding: 18px 24px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            backdrop-filter: blur(10px);
+            font-weight: 500;
+            display: none;
+        }
+
+        .alert-success {
+            background: rgba(40, 167, 69, 0.15);
+            border: 1px solid rgba(40, 167, 69, 0.3);
+            color: #51cf66;
+        }
+
+        .alert-info {
+            background: rgba(23, 162, 184, 0.15);
+            border: 1px solid rgba(23, 162, 184, 0.3);
+            color: #4dabf7;
+        }
+
+        .instructions {
+            background: rgba(255,255,255,0.05);
+            border-left: 4px solid #667eea;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .instructions h4 {
+            color: #fff;
+            margin-bottom: 15px;
+        }
+
+        .instructions ol {
+            color: rgba(255,255,255,0.8);
+            margin-left: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="payment-box">
+            <div class="header">
+                <h1>💳 Finalizar Pagamento</h1>
+                <p>Complete sua compra via PIX</p>
+            </div>
+
+            <div id="alertMessage" class="alert"></div>
+
+            <!-- Resumo do Pedido -->
+            <div class="plan-summary" id="planSummary">
+                <h3>📋 Resumo do Pedido</h3>
+                <div class="summary-item">
+                    <span>Plano:</span>
+                    <strong id="planName">-</strong>
+                </div>
+                <div class="summary-item">
+                    <span>Usuário:</span>
+                    <strong id="userName">-</strong>
+                </div>
+                <div class="summary-item">
+                    <span>Email:</span>
+                    <strong id="userEmail">-</strong>
+                </div>
+                <div class="summary-item">
+                    <span>💰 Total:</span>
+                    <strong id="totalPrice">R$ 0,00</strong>
+                </div>
+            </div>
+
+            <!-- Instruções -->
+            <div class="instructions">
+                <h4>📱 Como Pagar via PIX:</h4>
+                <ol>
+                    <li>Abra o app do seu banco</li>
+                    <li>Escolha "Pagar com PIX"</li>
+                    <li>Escaneie o QR Code ou copie o código</li>
+                    <li>Confirme o pagamento</li>
+                    <li>Click em "Confirmar Pagamento" abaixo</li>
+                </ol>
+            </div>
+
+            <!-- Seção PIX -->
+            <div class="pix-section">
+                <h3>📱 Pague com PIX</h3>
+                <div class="pix-qr">
+                    📱
+                </div>
+                <p style="color: rgba(255,255,255,0.7); margin-bottom: 15px;">
+                    Código PIX Copia e Cola:
+                </p>
+                <div class="pix-code" id="pixCode">
+                    00020126580014BR.GOV.BCB.PIX0136champion-bot-pagamento@pix.com520400005303986540525.005802BR5913ChampionBot6009SaoPaulo62070503***6304XXXX
+                </div>
+                <button class="btn" onclick="copyPixCode()">📋 Copiar Código PIX</button>
+            </div>
+
+            <!-- Ações -->
+            <button class="btn" onclick="confirmPayment()">
+                ✅ Confirmar Pagamento (Simulação)
+            </button>
+            <button class="btn btn-secondary" onclick="cancelPayment()">
+                ❌ Cancelar
+            </button>
+        </div>
+    </div>
+
+    <script src="auth.js"></script>
+    <script>
+        let registrationData = null;
+
+        // ═══════════════════════════════════════════════════════════════
+        // INICIALIZAÇÃO
+        // ═══════════════════════════════════════════════════════════════
+        
+        (function init() {
+            // Carrega dados do registro
+            const pending = sessionStorage.getItem('pendingRegistration');
+            
+            if (!pending) {
+                alert('❌ Sessão expirada ou inválida!');
+                window.location.href = 'auth_new.html';
+                return;
+            }
+            
+            registrationData = JSON.parse(pending);
+            
+            // Atualiza UI
+            document.getElementById('planName').textContent = 
+                registrationData.plan === 'monthly' ? '📅 Plano Mensal' : '♾️ Plano Ilimitado';
+            document.getElementById('userName').textContent = registrationData.username;
+            document.getElementById('userEmail').textContent = registrationData.email;
+            document.getElementById('totalPrice').textContent = 
+                'R$ ' + registrationData.price.toFixed(2).replace('.', ',');
+            
+            // Atualiza código PIX com valor real
+            updatePixCode(registrationData.price);
+        })();
+
+        // ═══════════════════════════════════════════════════════════════
+        // FUNÇÕES
+        // ═══════════════════════════════════════════════════════════════
+        
+        function updatePixCode(price) {
+            const pixCode = `00020126580014BR.GOV.BCB.PIX0136champion-bot@pix.com5204000053039865406${price.toFixed(2)}5802BR5913ChampionBot6009SaoPaulo62070503***6304XXXX`;
+            document.getElementById('pixCode').textContent = pixCode;
+        }
+
+        function copyPixCode() {
+            const pixCode = document.getElementById('pixCode').textContent;
+            navigator.clipboard.writeText(pixCode).then(() => {
+                showAlert('✅ Código PIX copiado com sucesso!', 'success');
+            }).catch(() => {
+                showAlert('❌ Erro ao copiar código.', 'error');
+            });
+        }
+
+        async function confirmPayment() {
+            if (!confirm('⚠️ ATENÇÃO!\n\nEsta é uma simulação de pagamento.\n\nEm produção, você integraria com uma API de pagamento real (Mercado Pago, PagSeguro, etc.).\n\nDeseja prosseguir e criar a conta?')) {
+                return;
+            }
+
+            try {
+                // Hash da senha
+                const passwordHash = await hashPassword(registrationData.password);
+                
+                // Calcula data de expiração
+                let expiryDate = null;
+                if (registrationData.plan === 'monthly') {
+                    expiryDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+                }
+                
+                // Cria usuário
+                const v3Data = JSON.parse(localStorage.getItem('championBotUsersV3') || '{"users": [], "meta": {}}');
+                
+                const newUser = {
+                    id: 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                    username: registrationData.username,
+                    email: registrationData.email,
+                    passwordHash: passwordHash,
+                    isAdmin: false,
+                    active: true,
+                    subscriptionType: registrationData.plan === 'monthly' ? 'monthly' : 'permanent',
+                    expiryDate: expiryDate,
+                    createdAt: new Date().toISOString(),
+                    lastLogin: null,
+                    lastActivity: new Date().toISOString(),
+                    metadata: {
+                        source: 'payment-registration',
+                        plan: registrationData.plan,
+                        price: registrationData.price,
+                        paymentDate: new Date().toISOString(),
+                        paymentMethod: 'pix-simulated'
+                    }
+                };
+                
+                v3Data.users.push(newUser);
+                v3Data.meta = {
+                    version: 3,
+                    totalUsers: v3Data.users.length,
+                    lastUpdate: new Date().toISOString()
+                };
+                
+                localStorage.setItem('championBotUsersV3', JSON.stringify(v3Data));
+                
+                // Limpa dados temporários
+                sessionStorage.removeItem('pendingRegistration');
+                
+                // Cria sessão automaticamente
+                createSession(registrationData.username, true);
+                
+                // Sucesso
+                showAlert('✅ Pagamento confirmado! Conta criada com sucesso! Redirecionando...', 'success');
+                
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 2000);
+                
+            } catch (error) {
+                console.error('Erro ao criar conta:', error);
+                showAlert('❌ Erro ao criar conta: ' + error.message, 'error');
+            }
+        }
+
+        function cancelPayment() {
+            if (confirm('Deseja cancelar o pagamento?')) {
+                sessionStorage.removeItem('pendingRegistration');
+                window.location.href = 'auth_new.html';
+            }
+        }
+
+        function showAlert(message, type) {
+            const alert = document.getElementById('alertMessage');
+            alert.textContent = message;
+            alert.className = 'alert alert-' + type;
+            alert.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

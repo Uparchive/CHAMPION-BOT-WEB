@@ -269,8 +269,9 @@ function saveConfig() {
             config.tokenReal = '';
         }
         
-        localStorage.setItem('championBotConfig', JSON.stringify(config));
-        log('💾 Configurações salvas!', 'info');
+        const storageKey = getUserStorageKey('championBotConfig');
+        localStorage.setItem(storageKey, JSON.stringify(config));
+        log(`💾 Configurações salvas para usuário: ${getCurrentUsername()}!`, 'info');
     } catch (error) {
         console.error('Erro ao salvar configurações:', error);
         alert('❌ Erro ao salvar configurações: ' + error.message);
@@ -278,8 +279,12 @@ function saveConfig() {
 }
 
 function loadConfig() {
-    const saved = localStorage.getItem('championBotConfig');
-    if (!saved) return;
+    const storageKey = getUserStorageKey('championBotConfig');
+    const saved = localStorage.getItem(storageKey);
+    if (!saved) {
+        console.log(`ℹ️ Nenhuma configuração encontrada para usuário: ${getCurrentUsername()}`);
+        return;
+    }
     
     try {
         const config = JSON.parse(saved);
@@ -403,10 +408,11 @@ function clearToken() {
     document.getElementById('apiToken').value = '';
     document.getElementById('rememberToken').checked = false;
     
-    const config = JSON.parse(localStorage.getItem('championBotConfig') || '{}');
+    const storageKey = getUserStorageKey('championBotConfig');
+    const config = JSON.parse(localStorage.getItem(storageKey) || '{}');
     config.token = '';
     config.rememberToken = false;
-    localStorage.setItem('championBotConfig', JSON.stringify(config));
+    localStorage.setItem(storageKey, JSON.stringify(config));
     
     log('🗑️ Token removido do cache', 'warning');
 }
@@ -596,9 +602,28 @@ function getStopReasonText(reason) {
     return reasons[reason] || 'Desconhecido';
 }
 
+// 🆕 Obtém o nome do usuário logado
+function getCurrentUsername() {
+    try {
+        const session = window.ChampionBotAuth?.getActiveSession();
+        return session?.username || 'default_user';
+    } catch (error) {
+        console.warn('Auth não disponível, usando usuário padrão');
+        return 'default_user';
+    }
+}
+
+// 🆕 Gera chave de storage específica do usuário
+function getUserStorageKey(baseKey) {
+    const username = getCurrentUsername();
+    return `${baseKey}_${username}`;
+}
+
 function saveSessionHistory() {
     try {
-        localStorage.setItem('championBotSessionHistory', JSON.stringify(sessionHistory));
+        const storageKey = getUserStorageKey('championBotSessionHistory');
+        localStorage.setItem(storageKey, JSON.stringify(sessionHistory));
+        console.log(`✅ Histórico salvo para usuário: ${getCurrentUsername()}`);
     } catch (error) {
         console.error('Erro ao salvar histórico:', error);
     }
@@ -606,7 +631,8 @@ function saveSessionHistory() {
 
 function loadSessionHistory() {
     try {
-        const saved = localStorage.getItem('championBotSessionHistory');
+        const storageKey = getUserStorageKey('championBotSessionHistory');
+        const saved = localStorage.getItem(storageKey);
         if (saved) {
             sessionHistory = JSON.parse(saved);
             // Converter strings de data de volta para Date objects
@@ -616,7 +642,10 @@ function loadSessionHistory() {
                     session.endTime = new Date(session.endTime);
                 }
             });
+            console.log(`✅ Histórico carregado para usuário: ${getCurrentUsername()} - ${sessionHistory.length} sessões`);
             renderSessionHistory();
+        } else {
+            console.log(`ℹ️ Nenhum histórico encontrado para usuário: ${getCurrentUsername()}`);
         }
     } catch (error) {
         console.error('Erro ao carregar histórico:', error);
@@ -647,10 +676,13 @@ function clearSessionHistory() {
         return;
     }
     
+    const username = getCurrentUsername();
+    const storageKey = getUserStorageKey('championBotSessionHistory');
+    
     sessionHistory = [];
-    localStorage.removeItem('championBotSessionHistory');
+    localStorage.removeItem(storageKey);
     renderSessionHistory();
-    log('🗑️ Histórico de sessões limpo com sucesso', 'warning');
+    log(`🗑️ Histórico de sessões limpo com sucesso para usuário: ${username}`, 'warning');
 }
 
 function renderSessionHistory() {

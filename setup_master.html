@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔐 Setup Master User - Champion Bot</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 100%);
+            color: white;
+            padding: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .setup-container {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 193, 7, 0.5);
+            border-radius: 16px;
+            padding: 40px;
+            max-width: 600px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+        h1 {
+            color: #ffc107;
+            margin-bottom: 20px;
+            font-size: 32px;
+        }
+        .icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+        .info-box {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: left;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+        .info-box h3 {
+            color: #ffc107;
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+        .credential {
+            background: rgba(102, 126, 234, 0.2);
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            border-left: 4px solid #667eea;
+        }
+        button {
+            background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+            color: #000;
+            border: none;
+            padding: 16px 32px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 700;
+            margin: 10px;
+            transition: all 0.3s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(255, 193, 7, 0.6);
+        }
+        .success {
+            color: #48bb78;
+            font-weight: bold;
+        }
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 8px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="setup-container">
+        <div class="icon">👑</div>
+        <h1>Setup do Usuário Mestre</h1>
+        <p>Configure as permissões totais para o usuário administrador principal</p>
+        
+        <div class="info-box">
+            <h3>📋 Credenciais do Usuário Mestre:</h3>
+            <div class="credential">
+                <strong>👤 Usuário:</strong> Champion Mestre
+            </div>
+            <div class="credential">
+                <strong>🔑 Senha:</strong> Champion@2025!
+            </div>
+        </div>
+
+        <div class="info-box">
+            <h3>✅ Permissões que serão concedidas:</h3>
+            <ul>
+                <li>🔐 <strong>isAdmin:</strong> true (acesso ao painel administrativo)</li>
+                <li>✅ <strong>active:</strong> true (conta ativa)</li>
+                <li>♾️ <strong>subscriptionType:</strong> permanent (assinatura vitalícia)</li>
+                <li>🚫 <strong>expiryDate:</strong> null (nunca expira)</li>
+                <li>👑 <strong>Prioridade máxima</strong> em todos os sistemas</li>
+            </ul>
+        </div>
+
+        <div class="status" id="status">
+            <span style="color: #ffc107;">⏳ Aguardando configuração...</span>
+        </div>
+        
+        <button onclick="setupMasterUser()">👑 CONFIGURAR USUÁRIO MESTRE</button>
+        <br>
+        <button onclick="window.location.href='auth.html'" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+            🔐 Ir para Login
+        </button>
+    </div>
+
+    <script src="auth.js"></script>
+    <script>
+        async function setupMasterUser() {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = '<span style="color: #ffc107;">⏳ Configurando usuário mestre...</span>';
+
+            try {
+                const masterUsername = 'Champion Mestre';
+                const masterPassword = 'Champion@2025!';
+                const masterEmail = 'master@champion.bot';
+
+                // Gera hash da senha
+                const passwordHash = await hashPassword(masterPassword);
+
+                // ========================================
+                // 1. CONFIGURA SISTEMA ANTIGO
+                // ========================================
+                const oldUsers = JSON.parse(localStorage.getItem('championBotUsers') || '{}');
+                
+                oldUsers[masterUsername] = {
+                    username: masterUsername,
+                    email: masterEmail,
+                    passwordHash: passwordHash,
+                    isAdmin: true,
+                    active: true,
+                    createdAt: new Date().toISOString(),
+                    lastLogin: null,
+                    metadata: {
+                        role: 'SUPER_ADMIN',
+                        permissions: 'ALL',
+                        setupDate: new Date().toISOString()
+                    }
+                };
+
+                localStorage.setItem('championBotUsers', JSON.stringify(oldUsers));
+                console.log('✅ Sistema antigo configurado');
+
+                // ========================================
+                // 2. CONFIGURA SISTEMA V3
+                // ========================================
+                const v3Data = JSON.parse(localStorage.getItem('championBotUsersV3') || '{"users": [], "meta": {}}');
+                
+                // Remove usuário mestre existente se houver
+                v3Data.users = v3Data.users.filter(u => u.username !== masterUsername);
+
+                // Cria novo usuário mestre com TODAS as permissões
+                const masterUser = {
+                    id: 'MASTER_USER_001',
+                    username: masterUsername,
+                    email: masterEmail,
+                    passwordHash: passwordHash,
+                    isAdmin: true,
+                    active: true,
+                    subscriptionType: 'permanent',
+                    expiryDate: null,
+                    createdAt: new Date().toISOString(),
+                    lastLogin: null,
+                    lastActivity: new Date().toISOString(),
+                    metadata: {
+                        role: 'SUPER_ADMIN',
+                        permissions: 'ALL',
+                        priority: 999999,
+                        canManageAdmins: true,
+                        canDeleteUsers: true,
+                        canModifySubscriptions: true,
+                        canAccessAllData: true,
+                        setupDate: new Date().toISOString(),
+                        setupVersion: 'v3.0-master'
+                    }
+                };
+
+                v3Data.users.unshift(masterUser); // Adiciona no início do array
+
+                v3Data.meta = {
+                    version: 3,
+                    totalUsers: v3Data.users.length,
+                    lastUpdate: new Date().toISOString(),
+                    masterUserConfigured: true,
+                    masterUserId: 'MASTER_USER_001'
+                };
+
+                localStorage.setItem('championBotUsersV3', JSON.stringify(v3Data));
+                console.log('✅ Sistema V3 configurado');
+
+                // ========================================
+                // 3. RESUMO
+                // ========================================
+                statusDiv.innerHTML = `
+                    <span class="success">✅ CONFIGURAÇÃO CONCLUÍDA COM SUCESSO!</span><br><br>
+                    <div style="text-align: left; margin-top: 15px;">
+                        <strong>📊 Resumo:</strong><br>
+                        • Sistema Antigo: ✅ Configurado<br>
+                        • Sistema V3: ✅ Configurado<br>
+                        • Usuário: ${masterUsername}<br>
+                        • Status: 👑 SUPER ADMIN<br>
+                        • Permissões: 🔓 TOTAL<br>
+                        • Assinatura: ♾️ VITALÍCIA<br>
+                        • Prioridade: 🔝 MÁXIMA<br><br>
+                        <strong style="color: #48bb78;">Você pode fazer login agora!</strong>
+                    </div>
+                `;
+
+                // Mostra resultado detalhado no console
+                console.log('========================================');
+                console.log('USUÁRIO MESTRE CONFIGURADO:');
+                console.log('========================================');
+                console.log('Username:', masterUsername);
+                console.log('Email:', masterEmail);
+                console.log('Admin:', true);
+                console.log('Active:', true);
+                console.log('Subscription:', 'permanent');
+                console.log('Permissions:', 'ALL');
+                console.log('========================================');
+                console.log('Dados V3:', masterUser);
+                console.log('========================================');
+
+                // Alert de sucesso
+                setTimeout(() => {
+                    alert('🎉 SUCESSO!\n\n' +
+                          'Usuário Mestre configurado com TODAS as permissões!\n\n' +
+                          '👤 Usuário: Champion Mestre\n' +
+                          '🔑 Senha: Champion@2025!\n\n' +
+                          'Clique em OK para ir à tela de login.');
+                }, 500);
+
+            } catch(error) {
+                statusDiv.innerHTML = `<span style="color: #ef4444;">❌ ERRO: ${error.message}</span>`;
+                console.error('Erro ao configurar usuário mestre:', error);
+                alert('❌ Erro ao configurar: ' + error.message);
+            }
+        }
+
+        // Função para gerar hash SHA-256
+        async function hashPassword(password) {
+            const salt = 'ChampionBot2025_SecureSalt';
+            const message = password + salt;
+            const msgBuffer = new TextEncoder().encode(message);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            return hashHex;
+        }
+
+        // Verifica se já está configurado ao carregar
+        window.addEventListener('DOMContentLoaded', function() {
+            try {
+                const v3Data = JSON.parse(localStorage.getItem('championBotUsersV3') || '{"users": []}');
+                const masterUser = v3Data.users.find(u => u.username === 'Champion Mestre');
+                
+                if (masterUser && masterUser.isAdmin) {
+                    document.getElementById('status').innerHTML = 
+                        '<span style="color: #48bb78;">✅ Usuário Mestre JÁ está configurado!</span><br>' +
+                        '<small>Clique no botão para reconfigurar se necessário.</small>';
+                }
+            } catch(e) {
+                console.log('Primeira configuração');
+            }
+        });
+    </script>
+</body>
+</html>
