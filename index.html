@@ -385,6 +385,9 @@
             }
         }
 
+        // 🔥 EXPORTA PARA ESCOPO GLOBAL
+        window.toggleUserDropdown = toggleUserDropdown;
+
         function getExpiryInfoHTML(user) {
             if (user.subscriptionType === 'permanent') {
                 return `<div class="dropdown-expiry-info permanent">♾️ Acesso Vitalício</div>`;
@@ -454,6 +457,11 @@
         function openAdminPanel() {
             window.location.href = 'admin.html';
         }
+
+        // 🔥 EXPORTA FUNÇÕES PARA ESCOPO GLOBAL
+        window.logoutUser = logoutUser;
+        window.openAdminPanel = openAdminPanel;
+        window.getUserDetailedInfo = getUserDetailedInfo;
     </script>
 </head>
 <body>
