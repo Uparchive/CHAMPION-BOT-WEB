@@ -310,6 +310,66 @@
         -webkit-transform: translateZ(0) !important;
         transform: translateZ(0) !important;
     }
+    
+    /* ═══════════════════════════════════════════════════════════
+       LOG CONTAINER - Otimizado para Mobile
+       ═══════════════════════════════════════════════════════════ */
+    .log-container {
+        height: 300px !important;
+        max-height: 40vh !important;
+        padding: 10px !important;
+        font-size: 11px !important;
+        line-height: 1.5 !important;
+        border-radius: 10px !important;
+        /* Scroll suave no iOS */
+        -webkit-overflow-scrolling: touch !important;
+        /* Previne bounce excessivo */
+        overscroll-behavior: contain !important;
+    }
+    
+    /* Log items no mobile */
+    .log-container > div {
+        padding: 8px 10px !important;
+        margin-bottom: 6px !important;
+        font-size: 11px !important;
+        border-radius: 6px !important;
+        /* Quebra de linha melhorada */
+        word-break: break-word !important;
+        white-space: pre-wrap !important;
+        overflow-wrap: anywhere !important;
+    }
+    
+    /* Timestamp menor no mobile */
+    .log-container > div span:first-child {
+        font-size: 10px !important;
+        display: block !important;
+        margin-bottom: 3px !important;
+        opacity: 0.5 !important;
+    }
+    
+    /* Empty state menor */
+    .log-container:empty::before {
+        padding: 30px 10px !important;
+        font-size: 12px !important;
+    }
+    
+    /* Scrollbar mais fino no mobile */
+    .log-container::-webkit-scrollbar {
+        width: 4px !important;
+    }
+    
+    /* Panel que contém os logs */
+    .panel:has(.log-container) {
+        order: 3 !important; /* Coloca logs depois do dashboard */
+        width: 100% !important;
+        margin: 10px 0 !important;
+    }
+    
+    /* Título do painel de logs */
+    .panel:has(.log-container) .panel-title {
+        font-size: 16px !important;
+        padding: 12px !important;
+    }
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -325,8 +385,10 @@
         font-size: 18px !important;
     }
     
-    .logs-container {
+    .logs-container,
+    .log-container {
         max-height: 150px !important;
+        height: 150px !important;
     }
     
     .bot-header {

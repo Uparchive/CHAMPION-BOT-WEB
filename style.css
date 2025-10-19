@@ -1369,6 +1369,120 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 /* ═══════════════════════════════════════════════════════════════
+   LOG CONTAINER - Otimizado para Mobile
+   ═══════════════════════════════════════════════════════════════ */
+
+.log-container {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    padding: 15px;
+    height: 400px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+    /* Scroll suave no mobile */
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+}
+
+.log-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.log-container::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+}
+
+.log-container::-webkit-scrollbar-thumb {
+    background: var(--accent-purple);
+    border-radius: 4px;
+}
+
+.log-container::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-cyan);
+}
+
+/* Empty state */
+.log-container:empty::before {
+    content: '📋 Aguardando logs...';
+    display: block;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.3);
+    padding: 50px 20px;
+    font-size: 14px;
+}
+
+/* Log items individuais */
+.log-container > div {
+    margin-bottom: 8px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border-left: 3px solid transparent;
+    animation: slideInLog 0.3s ease;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+@keyframes slideInLog {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Tipos de log com cores específicas */
+.log-container > div.success,
+.log-container > div[class*="success"] {
+    border-left-color: var(--accent-green);
+    color: var(--accent-green);
+}
+
+.log-container > div.error,
+.log-container > div[class*="error"] {
+    border-left-color: var(--accent-red);
+    color: var(--accent-red);
+    background: rgba(255, 0, 110, 0.05);
+}
+
+.log-container > div.warning,
+.log-container > div[class*="warning"] {
+    border-left-color: var(--accent-yellow);
+    color: var(--accent-yellow);
+    background: rgba(255, 190, 11, 0.05);
+}
+
+.log-container > div.info,
+.log-container > div[class*="info"] {
+    border-left-color: var(--accent-blue);
+    color: var(--accent-cyan);
+}
+
+.log-container > div.trade,
+.log-container > div[class*="trade"] {
+    border-left-color: var(--accent-purple);
+    color: var(--accent-purple);
+    font-weight: bold;
+    background: rgba(131, 56, 236, 0.08);
+}
+
+/* Timestamp nos logs */
+.log-container > div span:first-child {
+    opacity: 0.6;
+    margin-right: 8px;
+    font-size: 11px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
    SCROLLBAR
    ═══════════════════════════════════════════════════════════════ */
 
