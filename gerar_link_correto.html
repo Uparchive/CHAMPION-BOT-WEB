@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerar Link de Pagamento</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 { color: #333; }
+        button {
+            background: #009ee3;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover { background: #0086c3; }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e8f5e9;
+            border-radius: 5px;
+            word-break: break-all;
+        }
+        .error {
+            background: #ffebee;
+            color: #c62828;
+        }
+        .code {
+            background: #263238;
+            color: #aed581;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            margin: 10px 0;
+            overflow-x: auto;
+            font-size: 14px;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔗 Gerar Link de Pagamento Correto</h1>
+        
+        <div class="warning">
+            <h3>⚠️ PROBLEMA IDENTIFICADO:</h3>
+            <p>O link <code>https://mpago.la/24JDjvC</code> <strong>NÃO tem URLs de retorno</strong>!</p>
+            <p>Por isso, após o pagamento, o cliente não volta para o site e a conta não é criada automaticamente.</p>
+        </div>
+
+        <h3>Clique para gerar o link correto:</h3>
+        <button onclick="generatePaymentLink()">🚀 Gerar Link com Auto-Retorno</button>
+        
+        <div id="result"></div>
+        
+        <hr style="margin: 30px 0;">
+        
+        <h3>📋 O que o novo link vai fazer:</h3>
+        <ol>
+            <li>Cliente paga R$ 25,00</li>
+            <li>Mercado Pago processa</li>
+            <li><strong>Redireciona AUTOMATICAMENTE</strong> para payment_success.html</li>
+            <li>Conta é criada no Firebase</li>
+            <li>Cliente faz login automático</li>
+        </ol>
+    </div>
+
+    <script>
+        const ACCESS_TOKEN = 'APP_USR-7301337016090260-101916-595fc615c118f5b6eb0bcdc0ba6a32ee-487873350';
+        
+        async function generatePaymentLink() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>⏳ Gerando link...</p>';
+            
+            const preferenceData = {
+                items: [{
+                    title: 'Champion Bot - Plano Mensal',
+                    quantity: 1,
+                    currency_id: 'BRL',
+                    unit_price: 25.00
+                }],
+                back_urls: {
+                    success: `${window.location.origin}/payment_success.html`,
+                    failure: `${window.location.origin}/payment_failure.html`,
+                    pending: `${window.location.origin}/payment_pending.html`
+                },
+                auto_return: 'approved',
+                external_reference: 'monthly_plan_' + Date.now(),
+                statement_descriptor: 'CHAMPION BOT',
+                notification_url: `${window.location.origin}/webhook`
+            };
+            
+            console.log('📤 Criando preferência:', preferenceData);
+            
+            try {
+                const response = await fetch('https://api.mercadopago.com/checkout/preferences', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${ACCESS_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(preferenceData)
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(JSON.stringify(error, null, 2));
+                }
+                
+                const data = await response.json();
+                console.log('✅ Link gerado:', data);
+                
+                resultDiv.innerHTML = `
+                    <div class="result">
+                        <h3>✅ Link Gerado com Sucesso!</h3>
+                        
+                        <p><strong>Link de Pagamento (NOVO):</strong></p>
+                        <div class="code">${data.init_point}</div>
+                        
+                        <p><strong>ID da Preferência:</strong></p>
+                        <div class="code">${data.id}</div>
+                        
+                        <h4>📝 Próximos Passos:</h4>
+                        <ol>
+                            <li>Copie o link acima (init_point)</li>
+                            <li>Cole no arquivo <code>payment_redirect.html</code></li>
+                            <li>Substitua o link antigo</li>
+                            <li>Teste novamente!</li>
+                        </ol>
+                        
+                        <p style="color: #28a745; font-weight: bold;">
+                            ✅ Agora quando o cliente pagar, vai voltar automaticamente e a conta será criada!
+                        </p>
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('❌ Erro:', error);
+                
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        <h3>❌ Erro CORS (Esperado no Navegador)</h3>
+                        <p>Navegadores bloqueiam chamadas diretas à API do Mercado Pago.</p>
+                        
+                        <h4>✅ SOLUÇÃO: Use este comando no PowerShell:</h4>
+                        <div class="code">
+$headers = @{
+    "Authorization" = "Bearer ${ACCESS_TOKEN}"
+    "Content-Type" = "application/json"
+}
+
+$body = @{
+    items = @(
+        @{
+            title = "Champion Bot - Plano Mensal"
+            quantity = 1
+            currency_id = "BRL"
+            unit_price = 25.00
+        }
+    )
+    back_urls = @{
+        success = "file:///C:/Users/Keslly%20Albuquerque/Desktop/Bot%20Atualização/payment_success.html"
+        failure = "file:///C:/Users/Keslly%20Albuquerque/Desktop/Bot%20Atualização/payment_failure.html"
+        pending = "file:///C:/Users/Keslly%20Albuquerque/Desktop/Bot%20Atualização/payment_pending.html"
+    }
+    auto_return = "approved"
+    external_reference = "monthly_plan"
+    statement_descriptor = "CHAMPION BOT"
+} | ConvertTo-Json -Depth 10
+
+$response = Invoke-RestMethod -Uri "https://api.mercadopago.com/checkout/preferences" -Method Post -Headers $headers -Body $body
+
+Write-Host "✅ Link Gerado:"
+Write-Host $response.init_point
+Write-Host ""
+Write-Host "ID da Preferência:"
+Write-Host $response.id
+                        </div>
+                        
+                        <p><strong>1. Copie o código acima</strong></p>
+                        <p><strong>2. Cole no PowerShell</strong></p>
+                        <p><strong>3. Execute (Enter)</strong></p>
+                        <p><strong>4. Copie o link "init_point" que aparecer</strong></p>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
