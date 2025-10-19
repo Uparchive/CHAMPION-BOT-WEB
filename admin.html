@@ -886,7 +886,51 @@
     </div>
 
     <script src="auth.js"></script>
+    
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        
+        // Configuração do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyCWPobM_NmbPG15ulqn9e9z7MKtAdgXjv8",
+            authDomain: "champion-bot-2835b.firebaseapp.com",
+            projectId: "champion-bot-2835b",
+            storageBucket: "champion-bot-2835b.firebasestorage.app",
+            messagingSenderId: "1023800590615",
+            appId: "1:1023800590615:web:e06a993d07a27626ab3752",
+            measurementId: "G-J6C2FDM8M4"
+        };
+        
+        // Inicializar Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        
+        console.log('🔥 Firebase inicializado no admin.html');
+        
+        // Exportar para o escopo global para acesso no script principal
+        window.firebaseDB = db;
+        window.firebaseApp = app;
+        
+        // Exportar funções do Firestore para o escopo global
+        window.firestoreCollection = collection;
+        window.firestoreGetDocs = getDocs;
+        window.firestoreAddDoc = addDoc;
+        window.firestoreUpdateDoc = updateDoc;
+        window.firestoreDeleteDoc = deleteDoc;
+        window.firestoreDoc = doc;
+        window.firestoreOnSnapshot = onSnapshot;
+        window.firestoreQuery = query;
+        window.firestoreOrderBy = orderBy;
+        
+        // Disparar evento quando Firebase estiver pronto
+        window.dispatchEvent(new Event('firebaseReady'));
+    </script>
+    
     <script>
+        // Aguardar Firebase estar pronto antes de executar o código
+        function initializeAdmin() {
         // ═══════════════════════════════════════════════════════════════
         // VERIFICAÇÃO DE ACESSO ADMIN
         // ═══════════════════════════════════════════════════════════════
@@ -1012,7 +1056,6 @@
                 
                 // Cria novo usuário
                 const newUser = {
-                    id: 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
                     username: username,
                     email: email,
                     passwordHash: passwordHash,
@@ -1029,15 +1072,22 @@
                     }
                 };
                 
-                // Adiciona ao sistema
-                v3Data.users.push(newUser);
-                v3Data.meta = {
-                    version: 3,
-                    totalUsers: v3Data.users.length,
-                    lastUpdate: new Date().toISOString()
-                };
-                
-                localStorage.setItem('championBotUsersV3', JSON.stringify(v3Data));
+                // Adicionar ao Firebase
+                if (window.firebaseDB && window.firestoreAddDoc) {
+                    const docRef = await window.firestoreAddDoc(window.firestoreCollection(window.firebaseDB, 'users'), newUser);
+                    console.log('✅ Usuário criado no Firebase:', docRef.id);
+                } else {
+                    // Fallback: localStorage
+                    newUser.id = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                    const v3Data = JSON.parse(localStorage.getItem('championBotUsersV3') || '{"users": [], "meta": {}}');
+                    v3Data.users.push(newUser);
+                    v3Data.meta = {
+                        version: 3,
+                        totalUsers: v3Data.users.length,
+                        lastUpdate: new Date().toISOString()
+                    };
+                    localStorage.setItem('championBotUsersV3', JSON.stringify(v3Data));
+                }
                 
                 // Feedback
                 showAlert(`✅ Usuário "${username}" criado com sucesso!`, 'success');
@@ -1045,9 +1095,7 @@
                 // Limpa formulário
                 document.getElementById('addUserForm').reset();
                 
-                // Atualiza listas
-                loadStats();
-                loadUsers();
+                // O listener em tempo real vai atualizar a UI automaticamente
                 
             } catch (error) {
                 console.error('Erro ao criar usuário:', error);
@@ -1060,23 +1108,83 @@
         // ═══════════════════════════════════════════════════════════════
         
         let allUsers = []; // Cache de todos os usuários
+        let unsubscribeUsers = null; // Listener em tempo real
         
-        function loadUsers() {
+        async function loadUsers() {
+            try {
+                console.log('🔄 Carregando usuários do Firebase...');
+                
+                // Verifica se Firebase está disponível
+                if (!window.firebaseDB || !window.firestoreOnSnapshot) {
+                    console.warn('⚠️ Firebase não disponível, usando localStorage');
+                    loadUsersFromLocalStorage();
+                    return;
+                }
+                
+                // Configurar listener em tempo real
+                const q = window.firestoreQuery(
+                    window.firestoreCollection(window.firebaseDB, 'users'), 
+                    window.firestoreOrderBy('createdAt', 'desc')
+                );
+                
+                unsubscribeUsers = window.firestoreOnSnapshot(q, (querySnapshot) => {
+                    allUsers = [];
+                    querySnapshot.forEach((doc) => {
+                        allUsers.push({
+                            id: doc.id,
+                            ...doc.data()
+                        });
+                    });
+                    
+                    console.log('✅ Usuários carregados do Firebase:', allUsers.length);
+                    
+                    // Sincronizar com localStorage (backup)
+                    const v3Data = {
+                        users: allUsers,
+                        meta: {
+                            version: 3,
+                            totalUsers: allUsers.length,
+                            lastUpdate: new Date().toISOString(),
+                            source: 'firebase'
+                        }
+                    };
+                    localStorage.setItem('championBotUsersV3', JSON.stringify(v3Data));
+                    
+                    // Atualizar UI
+                    loadStats();
+                    
+                    // Inicializa os filtros se existirem
+                    if (document.getElementById('searchInput')) {
+                        filterUsers();
+                    } else {
+                        renderUsers(allUsers);
+                    }
+                }, (error) => {
+                    console.error('❌ Erro no listener Firebase:', error);
+                    loadUsersFromLocalStorage();
+                });
+                
+            } catch (error) {
+                console.error('❌ Erro ao carregar usuários do Firebase:', error);
+                loadUsersFromLocalStorage();
+            }
+        }
+        
+        function loadUsersFromLocalStorage() {
             try {
                 const v3Data = JSON.parse(localStorage.getItem('championBotUsersV3') || '{"users": []}');
                 allUsers = v3Data.users || [];
                 
-                console.log('Usuários carregados:', allUsers.length);
+                console.log('📦 Usuários carregados do localStorage:', allUsers.length);
                 
                 // Inicializa os filtros se existirem
                 if (document.getElementById('searchInput')) {
                     filterUsers();
                 } else {
-                    // Se ainda não tem filtros, renderiza direto
                     renderUsers(allUsers);
                 }
             } catch (error) {
-                console.error('Erro ao carregar usuários:', error);
+                console.error('Erro ao carregar do localStorage:', error);
                 const tbody = document.getElementById('usersTableBody');
                 if (tbody) {
                     tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: #ff6b7a;">❌ Erro ao carregar usuários</td></tr>';
@@ -1111,11 +1219,14 @@
                 
                 const createdDate = new Date(user.createdAt).toLocaleDateString('pt-BR');
                 
-                const canDelete = user.username !== currentAdmin.username;
+                // PROTEÇÃO: Champion Mestre não pode ser excluído ou desativado
+                const isChampionMestre = user.username === 'Champion Mestre' || user.username === 'admin';
+                const canModify = !isChampionMestre;
+                const canDelete = canModify && user.username !== currentAdmin.username;
                 
                 return `
                     <tr>
-                        <td><strong>${user.username}</strong></td>
+                        <td><strong>${user.username}${isChampionMestre ? ' 🛡️' : ''}</strong></td>
                         <td>${user.email}</td>
                         <td>${typeBadge}</td>
                         <td>${user.subscriptionType}</td>
@@ -1123,9 +1234,11 @@
                         <td>${createdDate}</td>
                         <td>
                             <div class="actions">
-                                <button class="btn btn-sm" onclick="toggleUserStatus('${user.id}')" title="Ativar/Desativar">
-                                    ${user.active ? '❌' : '✅'}
-                                </button>
+                                ${canModify ? `
+                                    <button class="btn btn-sm" onclick="toggleUserStatus('${user.id}')" title="Ativar/Desativar">
+                                        ${user.active ? '❌' : '✅'}
+                                    </button>
+                                ` : '<span style="color: rgba(255,255,255,0.5);" title="Usuário protegido">🛡️ Protegido</span>'}
                                 ${canDelete ? `<button class="btn btn-danger btn-sm" onclick="deleteUser('${user.id}')" title="Excluir">🗑️</button>` : ''}
                             </div>
                         </td>
@@ -1189,45 +1302,91 @@
         // AÇÕES DE USUÁRIO
         // ═══════════════════════════════════════════════════════════════
         
-        function toggleUserStatus(userId) {
-            const v3Data = JSON.parse(localStorage.getItem('championBotUsersV3') || '{"users": []}');
-            const userIndex = v3Data.users.findIndex(u => u.id === userId);
-            
-            if (userIndex === -1) return;
-            
-            v3Data.users[userIndex].active = !v3Data.users[userIndex].active;
-            v3Data.meta.lastUpdate = new Date().toISOString();
-            
-            localStorage.setItem('championBotUsersV3', JSON.stringify(v3Data));
-            
-            const status = v3Data.users[userIndex].active ? 'ativado' : 'desativado';
-            showAlert(`✅ Usuário "${v3Data.users[userIndex].username}" ${status}!`, 'success');
-            
-            loadStats();
-            allUsers = v3Data.users; // Atualiza cache
-            filterUsers(); // Reaplica filtros
+        async function toggleUserStatus(userId) {
+            try {
+                // Encontrar usuário
+                const user = allUsers.find(u => u.id === userId);
+                if (!user) return;
+                
+                // PROTEÇÃO: Não permite desativar o Champion Mestre
+                if (user.username === 'Champion Mestre' || user.username === 'admin') {
+                    showAlert('🛡️ O usuário Champion Mestre não pode ser desativado!', 'error');
+                    return;
+                }
+                
+                const newStatus = !user.active;
+                
+                // Atualizar no Firebase
+                if (window.firebaseDB && window.firestoreUpdateDoc) {
+                    const userRef = window.firestoreDoc(window.firebaseDB, 'users', userId);
+                    
+                    await window.firestoreUpdateDoc(userRef, {
+                        active: newStatus,
+                        lastActivity: new Date().toISOString()
+                    });
+                    
+                    console.log('✅ Status atualizado no Firebase');
+                } else {
+                    // Fallback: localStorage
+                    const v3Data = JSON.parse(localStorage.getItem('championBotUsersV3') || '{"users": []}');
+                    const userIndex = v3Data.users.findIndex(u => u.id === userId);
+                    if (userIndex !== -1) {
+                        v3Data.users[userIndex].active = newStatus;
+                        v3Data.meta.lastUpdate = new Date().toISOString();
+                        localStorage.setItem('championBotUsersV3', JSON.stringify(v3Data));
+                    }
+                }
+                
+                const status = newStatus ? 'ativado' : 'desativado';
+                showAlert(`✅ Usuário "${user.username}" ${status}!`, 'success');
+                
+                // O listener em tempo real vai atualizar a UI automaticamente
+                
+            } catch (error) {
+                console.error('❌ Erro ao atualizar status:', error);
+                showAlert(`❌ Erro ao atualizar status: ${error.message}`, 'error');
+            }
         }
         
-        function deleteUser(userId) {
-            const v3Data = JSON.parse(localStorage.getItem('championBotUsersV3') || '{"users": []}');
-            const user = v3Data.users.find(u => u.id === userId);
-            
-            if (!user) return;
-            
-            if (!confirm(`⚠️ Tem certeza que deseja excluir o usuário "${user.username}"?\n\nEsta ação não pode ser desfeita!`)) {
-                return;
+        async function deleteUser(userId) {
+            try {
+                // Encontrar usuário
+                const user = allUsers.find(u => u.id === userId);
+                if (!user) return;
+                
+                // PROTEÇÃO: Não permite excluir o Champion Mestre
+                if (user.username === 'Champion Mestre' || user.username === 'admin') {
+                    showAlert('🛡️ O usuário Champion Mestre não pode ser excluído!', 'error');
+                    return;
+                }
+                
+                if (!confirm(`⚠️ Tem certeza que deseja excluir o usuário "${user.username}"?\n\nEsta ação não pode ser desfeita!`)) {
+                    return;
+                }
+                
+                // Excluir do Firebase
+                if (window.firebaseDB && window.firestoreDeleteDoc) {
+                    await window.firestoreDeleteDoc(window.firestoreDoc(window.firebaseDB, 'users', userId));
+                    
+                    console.log('✅ Usuário excluído do Firebase');
+                } else {
+                    // Fallback: localStorage
+                    const v3Data = JSON.parse(localStorage.getItem('championBotUsersV3') || '{"users": []}');
+                    v3Data.users = v3Data.users.filter(u => u.id !== userId);
+                    v3Data.meta.totalUsers = v3Data.users.length;
+                    v3Data.meta.lastUpdate = new Date().toISOString();
+                    localStorage.setItem('championBotUsersV3', JSON.stringify(v3Data));
+                }
+                
+                showAlert(`✅ Usuário "${user.username}" excluído com sucesso!`, 'success');
+                
+                // O listener em tempo real vai atualizar a UI automaticamente
+                
+            } catch (error) {
+                console.error('❌ Erro ao excluir usuário:', error);
+                showAlert(`❌ Erro ao excluir usuário: ${error.message}`, 'error');
             }
             
-            v3Data.users = v3Data.users.filter(u => u.id !== userId);
-            v3Data.meta.totalUsers = v3Data.users.length;
-            v3Data.meta.lastUpdate = new Date().toISOString();
-            
-            localStorage.setItem('championBotUsersV3', JSON.stringify(v3Data));
-            
-            showAlert(`✅ Usuário "${user.username}" excluído com sucesso!`, 'success');
-            
-            loadStats();
-            allUsers = v3Data.users; // Atualiza cache
             filterUsers(); // Reaplica filtros
         }
 
@@ -1262,6 +1421,36 @@
             setTimeout(() => {
                 container.innerHTML = '';
             }, 5000);
+        }
+        
+        // ═══════════════════════════════════════════════════════════════
+        // EXPORTAR FUNÇÕES PARA ESCOPO GLOBAL
+        // ═══════════════════════════════════════════════════════════════
+        // Necessário para os botões HTML (onclick) funcionarem
+        window.toggleUserStatus = toggleUserStatus;
+        window.deleteUser = deleteUser;
+        window.filterUsers = filterUsers;
+        window.goToBot = goToBot;
+        window.logout = logout;
+        window.addUser = addUser;
+        
+        } // Fim da função initializeAdmin
+        
+        // Aguardar Firebase estar pronto
+        if (window.firebaseDB) {
+            // Firebase já carregou
+            initializeAdmin();
+        } else {
+            // Aguardar evento
+            window.addEventListener('firebaseReady', initializeAdmin);
+            
+            // Timeout de segurança: se Firebase não carregar em 3s, tenta mesmo assim
+            setTimeout(() => {
+                if (!window.firebaseDB) {
+                    console.warn('⚠️ Firebase demorou para carregar, iniciando mesmo assim...');
+                    initializeAdmin();
+                }
+            }, 3000);
         }
     </script>
 </body>

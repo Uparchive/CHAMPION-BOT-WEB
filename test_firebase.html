@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔥 Teste Firebase - Champion Bot</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        
+        .test-item {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid #ddd;
+        }
+        
+        .test-item.success {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+        
+        .test-item.error {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+        
+        .test-item.testing {
+            border-left-color: #ffc107;
+            background: #fff3cd;
+        }
+        
+        .test-title {
+            font-weight: 700;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .test-message {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+            transition: transform 0.2s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(0,0,0,0.1);
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        pre {
+            background: #2d3748;
+            color: #f7fafc;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔥 Teste de Conexão Firebase</h1>
+        <p class="subtitle">Verificando configuração do Champion Bot...</p>
+        
+        <div id="tests"></div>
+        
+        <button class="btn" onclick="runTests()" id="testBtn">
+            🚀 Executar Testes
+        </button>
+        
+        <button class="btn" onclick="migrateData()" id="migrateBtn" style="margin-top: 10px; background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+            📦 Migrar Dados do localStorage
+        </button>
+    </div>
+    
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyCWPobM_NmbPG15ulqn9e9z7MKtAdgXjv8",
+            authDomain: "champion-bot-2835b.firebaseapp.com",
+            projectId: "champion-bot-2835b",
+            storageBucket: "champion-bot-2835b.firebasestorage.app",
+            messagingSenderId: "1023800590615",
+            appId: "1:1023800590615:web:e06a993d07a27626ab3752",
+            measurementId: "G-J6C2FDM8M4"
+        };
+        
+        let app, db;
+        
+        function addTest(title, message, status = 'testing') {
+            const testsDiv = document.getElementById('tests');
+            const testId = 'test-' + Date.now();
+            
+            const icons = {
+                testing: '⏳',
+                success: '✅',
+                error: '❌'
+            };
+            
+            testsDiv.innerHTML += `
+                <div class="test-item ${status}" id="${testId}">
+                    <div class="test-title">
+                        <span>${icons[status]}</span>
+                        <span>${title}</span>
+                    </div>
+                    <div class="test-message">${message}</div>
+                </div>
+            `;
+            
+            return testId;
+        }
+        
+        function updateTest(testId, title, message, status) {
+            const testEl = document.getElementById(testId);
+            if (!testEl) return;
+            
+            const icons = {
+                testing: '⏳',
+                success: '✅',
+                error: '❌'
+            };
+            
+            testEl.className = `test-item ${status}`;
+            testEl.innerHTML = `
+                <div class="test-title">
+                    <span>${icons[status]}</span>
+                    <span>${title}</span>
+                </div>
+                <div class="test-message">${message}</div>
+            `;
+        }
+        
+        window.runTests = async function() {
+            document.getElementById('testBtn').disabled = true;
+            document.getElementById('tests').innerHTML = '';
+            
+            // Teste 1: Inicializar Firebase
+            let test1 = addTest('Teste 1: Inicializar Firebase', 'Conectando ao Firebase...', 'testing');
+            try {
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                updateTest(test1, 'Teste 1: Inicializar Firebase', '✅ Firebase inicializado com sucesso!', 'success');
+            } catch (error) {
+                updateTest(test1, 'Teste 1: Inicializar Firebase', `❌ Erro: ${error.message}`, 'error');
+                document.getElementById('testBtn').disabled = false;
+                return;
+            }
+            
+            // Teste 2: Conectar ao Firestore
+            let test2 = addTest('Teste 2: Conectar ao Firestore', 'Verificando conexão com o banco...', 'testing');
+            try {
+                const testCollection = collection(db, 'users');
+                updateTest(test2, 'Teste 2: Conectar ao Firestore', '✅ Conexão com Firestore estabelecida!', 'success');
+            } catch (error) {
+                updateTest(test2, 'Teste 2: Conectar ao Firestore', `❌ Erro: ${error.message}`, 'error');
+                document.getElementById('testBtn').disabled = false;
+                return;
+            }
+            
+            // Teste 3: Criar documento de teste
+            let test3 = addTest('Teste 3: Criar Documento', 'Criando usuário de teste...', 'testing');
+            let testDocId;
+            try {
+                const docRef = await addDoc(collection(db, 'users'), {
+                    username: 'teste_' + Date.now(),
+                    email: 'teste@championbot.com',
+                    passwordHash: 'test_hash',
+                    isAdmin: false,
+                    active: true,
+                    subscriptionType: 'trial',
+                    expiryDate: null,
+                    createdAt: new Date().toISOString(),
+                    lastLogin: null,
+                    lastActivity: new Date().toISOString(),
+                    metadata: { source: 'test' }
+                });
+                testDocId = docRef.id;
+                updateTest(test3, 'Teste 3: Criar Documento', `✅ Usuário de teste criado! ID: ${docRef.id}`, 'success');
+            } catch (error) {
+                updateTest(test3, 'Teste 3: Criar Documento', `❌ Erro: ${error.message}<br><small>Verifique se as regras do Firestore estão configuradas corretamente!</small>`, 'error');
+                document.getElementById('testBtn').disabled = false;
+                return;
+            }
+            
+            // Teste 4: Ler documentos
+            let test4 = addTest('Teste 4: Ler Documentos', 'Buscando usuários...', 'testing');
+            try {
+                const querySnapshot = await getDocs(collection(db, 'users'));
+                const count = querySnapshot.size;
+                updateTest(test4, 'Teste 4: Ler Documentos', `✅ ${count} usuário(s) encontrado(s) no banco!`, 'success');
+            } catch (error) {
+                updateTest(test4, 'Teste 4: Ler Documentos', `❌ Erro: ${error.message}`, 'error');
+            }
+            
+            // Teste 5: Excluir documento de teste
+            let test5 = addTest('Teste 5: Excluir Documento', 'Removendo usuário de teste...', 'testing');
+            try {
+                await deleteDoc(doc(db, 'users', testDocId));
+                updateTest(test5, 'Teste 5: Excluir Documento', '✅ Usuário de teste removido com sucesso!', 'success');
+            } catch (error) {
+                updateTest(test5, 'Teste 5: Excluir Documento', `❌ Erro: ${error.message}`, 'error');
+            }
+            
+            // Resultado Final
+            addTest('🎉 Testes Concluídos!', 'Seu Firebase está configurado e funcionando perfeitamente! Agora você pode usar o admin_firebase.html', 'success');
+            
+            document.getElementById('testBtn').disabled = false;
+        };
+        
+        window.migrateData = async function() {
+            document.getElementById('migrateBtn').disabled = true;
+            document.getElementById('migrateBtn').innerHTML = '<span class="spinner"></span> Migrando...';
+            
+            try {
+                if (!app || !db) {
+                    app = initializeApp(firebaseConfig);
+                    db = getFirestore(app);
+                }
+                
+                const v3Data = JSON.parse(localStorage.getItem('championBotUsersV3') || '{"users": []}');
+                
+                if (v3Data.users.length === 0) {
+                    alert('ℹ️ Nenhum usuário encontrado no localStorage para migrar.');
+                    document.getElementById('migrateBtn').disabled = false;
+                    document.getElementById('migrateBtn').innerHTML = '📦 Migrar Dados do localStorage';
+                    return;
+                }
+                
+                // Verificar usuários já existentes
+                const existingUsers = await getDocs(collection(db, 'users'));
+                const existingUsernames = new Set();
+                existingUsers.forEach(doc => {
+                    existingUsernames.add(doc.data().username);
+                });
+                
+                let migrated = 0;
+                let skipped = 0;
+                
+                for (const user of v3Data.users) {
+                    if (existingUsernames.has(user.username)) {
+                        skipped++;
+                        continue;
+                    }
+                    
+                    await addDoc(collection(db, 'users'), user);
+                    migrated++;
+                }
+                
+                alert(`✅ Migração concluída!\n\n${migrated} usuários migrados\n${skipped} usuários ignorados (já existiam)`);
+                
+            } catch (error) {
+                alert('❌ Erro na migração: ' + error.message);
+                console.error(error);
+            }
+            
+            document.getElementById('migrateBtn').disabled = false;
+            document.getElementById('migrateBtn').innerHTML = '📦 Migrar Dados do localStorage';
+        };
+        
+        // Auto-executar testes ao carregar
+        setTimeout(() => {
+            runTests();
+        }, 500);
+    </script>
+</body>
+</html>

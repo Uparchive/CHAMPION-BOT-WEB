@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔥 Admin Panel - Firebase Edition</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap">
+    <style>
+        /* Reutilizar estilos do admin.html existente */
+        @import url('./admin.html');
+        
+        /* Estilos adicionais para Firebase */
+        .firebase-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            background: linear-gradient(135deg, rgba(255, 163, 26, 0.2), rgba(255, 107, 0, 0.2));
+            border: 1px solid rgba(255, 163, 26, 0.3);
+            border-radius: 20px;
+            color: #ffa31a;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-left: 10px;
+        }
+        
+        .sync-status {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(10px);
+            padding: 12px 20px;
+            border-radius: 12px;
+            color: #51cf66;
+            font-size: 13px;
+            font-weight: 600;
+            display: none;
+            align-items: center;
+            gap: 8px;
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateY(100px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .sync-status.syncing {
+            display: flex;
+            color: #4dabf7;
+        }
+        
+        .sync-status.success {
+            display: flex;
+            color: #51cf66;
+        }
+        
+        .sync-status.error {
+            display: flex;
+            color: #ff6b6b;
+        }
+        
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: currentColor;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Status de sincronização -->
+    <div class="sync-status" id="syncStatus">
+        <div class="spinner"></div>
+        <span id="syncMessage">Sincronizando...</span>
+    </div>
+    
+    <!-- Conteúdo do admin será injetado aqui via JavaScript -->
+    <div id="app"></div>
+    
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, orderBy, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        
+        // ═══════════════════════════════════════════════════════════════
+        // CONFIGURAÇÃO DO FIREBASE
+        // ═══════════════════════════════════════════════════════════════
+        
+        // Configuração do Firebase - Champion Bot
+        const firebaseConfig = {
+            apiKey: "AIzaSyCWPobM_NmbPG15ulqn9e9z7MKtAdgXjv8",
+            authDomain: "champion-bot-2835b.firebaseapp.com",
+            projectId: "champion-bot-2835b",
+            storageBucket: "champion-bot-2835b.firebasestorage.app",
+            messagingSenderId: "1023800590615",
+            appId: "1:1023800590615:web:e06a993d07a27626ab3752",
+            measurementId: "G-J6C2FDM8M4"
+        };
+        
+        // Verificar se está configurado
+        const isFirebaseConfigured = !firebaseConfig.apiKey.includes('SUA_API_KEY');
+        
+        if (!isFirebaseConfigured) {
+            console.warn('⚠️ Firebase não configurado! Usando localStorage como fallback.');
+            console.log('📖 Leia FIREBASE_SETUP.md para instruções de configuração');
+        }
+        
+        let app, db;
+        
+        try {
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            console.log('✅ Firebase inicializado com sucesso!');
+        } catch (error) {
+            console.error('❌ Erro ao inicializar Firebase:', error);
+        }
+        
+        // ═══════════════════════════════════════════════════════════════
+        // FUNÇÕES FIREBASE
+        // ═══════════════════════════════════════════════════════════════
+        
+        let unsubscribe = null;
+        
+        async function loadUsersFromFirebase() {
+            showSyncStatus('syncing', 'Carregando do Firebase...');
+            
+            try {
+                const querySnapshot = await getDocs(collection(db, 'users'));
+                const users = [];
+                
+                querySnapshot.forEach((doc) => {
+                    users.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                
+                console.log(`✅ ${users.length} usuários carregados do Firebase`);
+                showSyncStatus('success', `${users.length} usuários sincronizados`);
+                
+                return users;
+            } catch (error) {
+                console.error('❌ Erro ao carregar usuários:', error);
+                showSyncStatus('error', 'Erro ao carregar dados');
+                return [];
+            }
+        }
+        
+        async function createUserInFirebase(userData) {
+            showSyncStatus('syncing', 'Criando usuário...');
+            
+            try {
+                const docRef = await addDoc(collection(db, 'users'), {
+                    ...userData,
+                    createdAt: new Date().toISOString(),
+                    lastActivity: new Date().toISOString()
+                });
+                
+                console.log('✅ Usuário criado:', docRef.id);
+                showSyncStatus('success', 'Usuário criado com sucesso!');
+                
+                return { success: true, id: docRef.id };
+            } catch (error) {
+                console.error('❌ Erro ao criar usuário:', error);
+                showSyncStatus('error', 'Erro ao criar usuário');
+                return { success: false, error: error.message };
+            }
+        }
+        
+        async function updateUserInFirebase(userId, updates) {
+            showSyncStatus('syncing', 'Atualizando usuário...');
+            
+            try {
+                const userRef = doc(db, 'users', userId);
+                await updateDoc(userRef, {
+                    ...updates,
+                    lastActivity: new Date().toISOString()
+                });
+                
+                console.log('✅ Usuário atualizado:', userId);
+                showSyncStatus('success', 'Usuário atualizado!');
+                
+                return { success: true };
+            } catch (error) {
+                console.error('❌ Erro ao atualizar usuário:', error);
+                showSyncStatus('error', 'Erro ao atualizar usuário');
+                return { success: false, error: error.message };
+            }
+        }
+        
+        async function deleteUserFromFirebase(userId) {
+            showSyncStatus('syncing', 'Excluindo usuário...');
+            
+            try {
+                await deleteDoc(doc(db, 'users', userId));
+                console.log('✅ Usuário excluído:', userId);
+                showSyncStatus('success', 'Usuário excluído!');
+                
+                return { success: true };
+            } catch (error) {
+                console.error('❌ Erro ao excluir usuário:', error);
+                showSyncStatus('error', 'Erro ao excluir usuário');
+                return { success: false, error: error.message };
+            }
+        }
+        
+        function listenToFirebaseChanges(callback) {
+            const q = query(collection(db, 'users'), orderBy('createdAt', 'desc'));
+            
+            unsubscribe = onSnapshot(q, (querySnapshot) => {
+                const users = [];
+                querySnapshot.forEach((doc) => {
+                    users.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                
+                console.log('🔄 Dados atualizados em tempo real');
+                callback(users);
+            }, (error) => {
+                console.error('❌ Erro ao ouvir mudanças:', error);
+            });
+        }
+        
+        async function migrateToFirebase() {
+            showSyncStatus('syncing', 'Migrando dados...');
+            
+            try {
+                const v3Data = JSON.parse(localStorage.getItem('championBotUsersV3') || '{"users": []}');
+                
+                if (v3Data.users.length === 0) {
+                    showSyncStatus('success', 'Nenhum dado para migrar');
+                    return { success: true, migrated: 0 };
+                }
+                
+                const firebaseUsers = await loadUsersFromFirebase();
+                const firebaseUsernames = new Set(firebaseUsers.map(u => u.username));
+                
+                let migrated = 0;
+                
+                for (const user of v3Data.users) {
+                    if (firebaseUsernames.has(user.username)) {
+                        continue;
+                    }
+                    
+                    const result = await createUserInFirebase(user);
+                    if (result.success) {
+                        migrated++;
+                    }
+                }
+                
+                showSyncStatus('success', `${migrated} usuários migrados!`);
+                return { success: true, migrated };
+                
+            } catch (error) {
+                console.error('❌ Erro na migração:', error);
+                showSyncStatus('error', 'Erro na migração');
+                return { success: false, error: error.message };
+            }
+        }
+        
+        function showSyncStatus(type, message) {
+            const statusEl = document.getElementById('syncStatus');
+            const messageEl = document.getElementById('syncMessage');
+            
+            statusEl.className = `sync-status ${type}`;
+            messageEl.textContent = message;
+            
+            if (type !== 'syncing') {
+                setTimeout(() => {
+                    statusEl.style.display = 'none';
+                }, 3000);
+            }
+        }
+        
+        // ═══════════════════════════════════════════════════════════════
+        // EXPORTAR PARA WINDOW
+        // ═══════════════════════════════════════════════════════════════
+        
+        window.firebaseDB = {
+            isConfigured: isFirebaseConfigured,
+            loadUsers: loadUsersFromFirebase,
+            createUser: createUserInFirebase,
+            updateUser: updateUserInFirebase,
+            deleteUser: deleteUserFromFirebase,
+            listen: listenToFirebaseChanges,
+            migrate: migrateToFirebase,
+            stopListening: () => {
+                if (unsubscribe) {
+                    unsubscribe();
+                    console.log('🔇 Listener desconectado');
+                }
+            }
+        };
+        
+        // Carregar o admin.html existente dentro desta página
+        fetch('admin.html')
+            .then(response => response.text())
+            .then(html => {
+                // Extrair apenas o body
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const body = doc.body.innerHTML;
+                
+                document.getElementById('app').innerHTML = body;
+                
+                // Adicionar badge Firebase no título
+                const title = document.querySelector('.header h1');
+                if (title) {
+                    title.innerHTML += ' <span class="firebase-badge">🔥 Firebase Edition</span>';
+                }
+                
+                // Iniciar sincronização em tempo real
+                if (isFirebaseConfigured) {
+                    console.log('🔄 Iniciando sincronização em tempo real...');
+                    // A implementação completa seria feita aqui
+                }
+            })
+            .catch(error => {
+                console.error('❌ Erro ao carregar admin.html:', error);
+                document.getElementById('app').innerHTML = `
+                    <div style="padding: 40px; text-align: center; color: white;">
+                        <h1>❌ Erro ao carregar painel</h1>
+                        <p>Por favor, verifique se o arquivo admin.html existe.</p>
+                    </div>
+                `;
+            });
+        
+    </script>
+</body>
+</html>
