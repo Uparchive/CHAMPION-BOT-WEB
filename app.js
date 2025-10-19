@@ -3,6 +3,29 @@
 // ═══════════════════════════════════════════════════════════════
 
 // ═══════════════════════════════════════════════════════════════
+// 🔥 FIREBASE - Sistema de Histórico em Nuvem
+// ═══════════════════════════════════════════════════════════════
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+import { getFirestore, collection, addDoc, getDocs, query, where, orderBy, limit, doc, deleteDoc, writeBatch } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+// Configuração do Firebase
+const firebaseConfig = {
+    apiKey: "AIzaSyCWPobM_NmbPG15ulqn9e9z7MKtAdgXjv8",
+    authDomain: "champion-bot-2835b.firebaseapp.com",
+    projectId: "champion-bot-2835b",
+    storageBucket: "champion-bot-2835b.firebasestorage.app",
+    messagingSenderId: "1023800590615",
+    appId: "1:1023800590615:web:e06a993d07a27626ab3752",
+    measurementId: "G-J6C2FDM8M4"
+};
+
+// Inicializar Firebase
+const firebaseApp = initializeApp(firebaseConfig);
+const db = getFirestore(firebaseApp);
+
+console.log('🔥 Firebase inicializado - Histórico em nuvem ativo!');
+
+// ═══════════════════════════════════════════════════════════════
 // VARIÁVEIS GLOBAIS
 // ═══════════════════════════════════════════════════════════════
 let wsConnection = null;
@@ -619,19 +642,103 @@ function getUserStorageKey(baseKey) {
     return `${baseKey}_${username}`;
 }
 
-function saveSessionHistory() {
+async function saveSessionHistory() {
     try {
+        const username = getCurrentUsername();
         const storageKey = getUserStorageKey('championBotSessionHistory');
+        
+        // 1️⃣ Salva no localStorage (backup local)
         localStorage.setItem(storageKey, JSON.stringify(sessionHistory));
-        console.log(`✅ Histórico salvo para usuário: ${getCurrentUsername()}`);
+        console.log(`✅ Histórico salvo localmente para: ${username}`);
+        
+        // 2️⃣ Salva no Firebase Firestore (nuvem)
+        if (currentSession && currentSession.endTime) {
+            try {
+                const sessionData = {
+                    username: username,
+                    startTime: currentSession.startTime.toISOString(),
+                    endTime: currentSession.endTime.toISOString(),
+                    duration: currentSession.duration,
+                    strategy: currentSession.strategy,
+                    accountType: currentSession.accountType,
+                    asset: currentSession.asset,
+                    initialBalance: currentSession.initialBalance,
+                    finalBalance: currentSession.finalBalance,
+                    profit: currentSession.profit,
+                    profitPercent: currentSession.profitPercent,
+                    totalTrades: currentSession.totalTrades,
+                    wins: currentSession.wins,
+                    losses: currentSession.losses,
+                    winRate: currentSession.winRate,
+                    timestamp: new Date().toISOString(),
+                    device: {
+                        userAgent: navigator.userAgent,
+                        platform: navigator.platform,
+                        language: navigator.language
+                    }
+                };
+                
+                const docRef = await addDoc(collection(db, 'sessions'), sessionData);
+                console.log(`🔥 Sessão salva no Firebase com ID: ${docRef.id}`);
+            } catch (firebaseError) {
+                console.error('⚠️ Erro ao salvar no Firebase (continuando com localStorage):', firebaseError);
+            }
+        }
     } catch (error) {
-        console.error('Erro ao salvar histórico:', error);
+        console.error('❌ Erro ao salvar histórico:', error);
     }
 }
 
-function loadSessionHistory() {
+async function loadSessionHistory() {
     try {
+        const username = getCurrentUsername();
         const storageKey = getUserStorageKey('championBotSessionHistory');
+        
+        // 1️⃣ Tenta carregar do Firebase primeiro
+        try {
+            const q = query(
+                collection(db, 'sessions'),
+                where('username', '==', username),
+                orderBy('timestamp', 'desc'),
+                limit(50)
+            );
+            
+            const querySnapshot = await getDocs(q);
+            const firebaseSessions = [];
+            
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                firebaseSessions.push({
+                    id: doc.id,
+                    startTime: new Date(data.startTime),
+                    endTime: new Date(data.endTime),
+                    duration: data.duration,
+                    strategy: data.strategy,
+                    accountType: data.accountType,
+                    asset: data.asset,
+                    initialBalance: data.initialBalance,
+                    finalBalance: data.finalBalance,
+                    profit: data.profit,
+                    profitPercent: data.profitPercent,
+                    totalTrades: data.totalTrades,
+                    wins: data.wins,
+                    losses: data.losses,
+                    winRate: data.winRate
+                });
+            });
+            
+            if (firebaseSessions.length > 0) {
+                sessionHistory = firebaseSessions;
+                localStorage.setItem(storageKey, JSON.stringify(sessionHistory));
+                console.log(`🔥 ${firebaseSessions.length} sessões carregadas do Firebase para: ${username}`);
+                renderSessionHistory();
+                return;
+            }
+        } catch (firebaseError) {
+            console.warn('⚠️ Não foi possível carregar do Firebase, tentando localStorage...', firebaseError);
+        }
+        
+        // 2️⃣ Fallback: Carrega do localStorage
         const saved = localStorage.getItem(storageKey);
         if (saved) {
             sessionHistory = JSON.parse(saved);
@@ -642,18 +749,18 @@ function loadSessionHistory() {
                     session.endTime = new Date(session.endTime);
                 }
             });
-            console.log(`✅ Histórico carregado para usuário: ${getCurrentUsername()} - ${sessionHistory.length} sessões`);
+            console.log(`✅ Histórico carregado localmente para: ${username} - ${sessionHistory.length} sessões`);
             renderSessionHistory();
         } else {
-            console.log(`ℹ️ Nenhum histórico encontrado para usuário: ${getCurrentUsername()}`);
+            console.log(`ℹ️ Nenhum histórico encontrado para: ${username}`);
         }
     } catch (error) {
-        console.error('Erro ao carregar histórico:', error);
+        console.error('❌ Erro ao carregar histórico:', error);
         sessionHistory = [];
     }
 }
 
-function clearSessionHistory() {
+async function clearSessionHistory() {
     // 🆕 VERIFICAR SENHA DE SEGURANÇA
     if (securityPassword && securityPassword.length > 0) {
         const inputPassword = prompt('🔐 Digite a senha de segurança para confirmar a exclusão do histórico:');
@@ -679,10 +786,34 @@ function clearSessionHistory() {
     const username = getCurrentUsername();
     const storageKey = getUserStorageKey('championBotSessionHistory');
     
+    // 1️⃣ Limpa do localStorage
     sessionHistory = [];
     localStorage.removeItem(storageKey);
+    
+    // 2️⃣ Limpa do Firebase
+    try {
+        const q = query(
+            collection(db, 'sessions'),
+            where('username', '==', username)
+        );
+        
+        const querySnapshot = await getDocs(q);
+        const batch = writeBatch(db);
+        
+        let deleteCount = 0;
+        querySnapshot.forEach((docSnapshot) => {
+            batch.delete(doc(db, 'sessions', docSnapshot.id));
+            deleteCount++;
+        });
+        
+        await batch.commit();
+        console.log(`🔥 ${deleteCount} sessões removidas do Firebase para: ${username}`);
+    } catch (firebaseError) {
+        console.error('⚠️ Erro ao limpar Firebase (localStorage limpo):', firebaseError);
+    }
+    
     renderSessionHistory();
-    log(`🗑️ Histórico de sessões limpo com sucesso para usuário: ${username}`, 'warning');
+    log(`🗑️ Histórico de sessões limpo com sucesso para: ${username}`, 'warning');
 }
 
 function renderSessionHistory() {
