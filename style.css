@@ -8,6 +8,12 @@
     box-sizing: border-box;
 }
 
+html {
+    overflow-x: hidden;
+    overflow-y: scroll;
+    scroll-behavior: smooth;
+}
+
 :root {
     --bg-primary: #0f0f23;
     --bg-secondary: #1a1a3e;
@@ -28,6 +34,8 @@ body {
     color: var(--text-primary);
     min-height: 100vh;
     padding: 20px;
+    padding-bottom: 50px;
+    overflow-x: hidden;
 }
 
 .container {
