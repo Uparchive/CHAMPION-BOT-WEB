@@ -740,15 +740,18 @@ async function loadSessionHistory() {
         const username = getCurrentUsername();
         const storageKey = getUserStorageKey('championBotSessionHistory');
         
+        console.log(`🔍 Carregando histórico para usuário: ${username}`);
+        
         // 1️⃣ Tenta carregar do Firebase primeiro
         try {
+            // 🔥 REMOVIDO orderBy para evitar erro de índice
             const q = query(
                 collection(db, 'sessions'),
                 where('username', '==', username),
-                orderBy('timestamp', 'desc'),
                 limit(50)
             );
             
+            console.log('🔥 Executando query no Firebase...');
             const querySnapshot = await getDocs(q);
             const firebaseSessions = [];
             
@@ -778,18 +781,32 @@ async function loadSessionHistory() {
             });
             
             if (firebaseSessions.length > 0) {
+                // Ordenar por data localmente (mais recente primeiro)
+                firebaseSessions.sort((a, b) => b.endTime - a.endTime);
+                
                 sessionHistory = firebaseSessions;
                 // Salva também no localStorage como cache
                 saveSessionHistoryLocal();
                 console.log(`🔥✅ ${firebaseSessions.length} sessões carregadas do Firebase para: ${username}`);
+                log(`🔥 ${firebaseSessions.length} sessões carregadas da nuvem`, 'success');
                 renderSessionHistory();
                 return;
             } else {
                 console.log(`🔥 Nenhuma sessão encontrada no Firebase para: ${username}`);
+                log(`ℹ️ Nenhuma sessão na nuvem. Inicie o bot para criar histórico.`, 'info');
             }
         } catch (firebaseError) {
             console.error('⚠️ Erro ao carregar do Firebase:', firebaseError);
-            console.warn('Tentando carregar do localStorage...');
+            console.error('Código do erro:', firebaseError.code);
+            console.error('Mensagem:', firebaseError.message);
+            
+            if (firebaseError.code === 'failed-precondition') {
+                log('⚠️ Firebase: índice não encontrado. Carregando do cache local...', 'warning');
+            } else if (firebaseError.code === 'permission-denied') {
+                log('❌ Firebase: permissão negada. Verifique as regras do Firestore.', 'error');
+            } else {
+                log('⚠️ Firebase temporariamente indisponível. Usando cache local...', 'warning');
+            }
         }
         
         // 2️⃣ Fallback: Carrega do localStorage
@@ -804,14 +821,22 @@ async function loadSessionHistory() {
                 }
             });
             console.log(`💾 Histórico carregado do localStorage para: ${username} - ${sessionHistory.length} sessões`);
+            log(`💾 ${sessionHistory.length} sessões carregadas do cache local`, 'info');
             renderSessionHistory();
         } else {
             console.log(`ℹ️ Nenhum histórico encontrado para: ${username}`);
+            sessionHistory = [];
+            renderSessionHistory();
         }
     } catch (error) {
         console.error('❌ Erro ao carregar histórico:', error);
         sessionHistory = [];
     }
+}
+
+// 🔥 EXPORTA PARA ESCOPO GLOBAL
+if (typeof window !== 'undefined') {
+    window.loadSessionHistory = loadSessionHistory;
 }
 
 async function clearSessionHistory() {

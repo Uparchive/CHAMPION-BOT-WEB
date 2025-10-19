@@ -41,6 +41,17 @@
             // Exibe informações do usuário logado
             console.log('✅ Usuário autenticado:', session.username);
             displayUserInfo(session);
+            
+            // 🔥 CARREGAR HISTÓRICO APÓS AUTENTICAÇÃO
+            // Aguarda um pouco para garantir que o app.js foi carregado
+            setTimeout(() => {
+                if (typeof window.loadSessionHistory === 'function') {
+                    console.log('🔥 Carregando histórico do Firebase...');
+                    window.loadSessionHistory();
+                } else {
+                    console.warn('⚠️ loadSessionHistory não disponível ainda');
+                }
+            }, 1000);
         });
 
         function displayUserInfo(session) {

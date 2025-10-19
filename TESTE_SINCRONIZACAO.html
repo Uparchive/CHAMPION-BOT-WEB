@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔥 Teste de Sincronização Firebase</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1f3a 0%, #2d1b4e 100%);
+            color: white;
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 2.5em;
+            text-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
+        }
+        
+        .test-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .test-section h2 {
+            color: #00d4ff;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .step {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .step-number {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        
+        .success {
+            border-left-color: #48bb78;
+        }
+        
+        .warning {
+            border-left-color: #f6ad55;
+        }
+        
+        .info {
+            background: rgba(102, 126, 234, 0.2);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: bold;
+            margin: 10px 10px 10px 0;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .code {
+            background: #1a1f3a;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            margin: 10px 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .emoji {
+            font-size: 1.2em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔥 Teste de Sincronização Firebase</h1>
+        
+        <div class="test-section">
+            <h2><span class="emoji">🧪</span> Teste 1: Mesmo Navegador</h2>
+            
+            <div class="step">
+                <span class="step-number">1</span>
+                <strong>Faça login</strong> com <code style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px;">Champion Mestre</code>
+            </div>
+            
+            <div class="step">
+                <span class="step-number">2</span>
+                <strong>Inicie o bot</strong> e faça alguns trades
+            </div>
+            
+            <div class="step">
+                <span class="step-number">3</span>
+                <strong>Pare o bot</strong> e observe o console (F12)
+            </div>
+            
+            <div class="step success">
+                <span class="step-number">✓</span>
+                <strong>Console deve mostrar:</strong>
+                <div class="code">
+🔥 Sessão salva no Firebase com ID: abc123... para usuário: Champion Mestre<br>
+✅ Histórico salvo localmente para: Champion Mestre (X sessões)
+                </div>
+            </div>
+            
+            <div class="step">
+                <span class="step-number">4</span>
+                <strong>Deslogue</strong> (clique no perfil → Sair)
+            </div>
+            
+            <div class="step">
+                <span class="step-number">5</span>
+                <strong>Faça login novamente</strong> com a mesma conta
+            </div>
+            
+            <div class="step success">
+                <span class="step-number">✓</span>
+                <strong>Histórico deve aparecer!</strong> ✅
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2><span class="emoji">🌐</span> Teste 2: Navegadores Diferentes (PRINCIPAL)</h2>
+            
+            <div class="step warning">
+                <span class="emoji">⚠️</span>
+                <strong>IMPORTANTE:</strong> Este é o teste que resolve seu problema!
+            </div>
+            
+            <div class="step">
+                <span class="step-number">1</span>
+                <strong>No Chrome:</strong>
+                <ul style="margin-left: 40px; margin-top: 10px;">
+                    <li>Acesse: <code style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px;">http://localhost:8000/auth.html</code></li>
+                    <li>Faça login: <code>Champion Mestre</code> / <code>admin123</code></li>
+                    <li>Inicie o bot e faça operações</li>
+                    <li>Pare o bot</li>
+                    <li>Veja o histórico aparecer</li>
+                </ul>
+            </div>
+            
+            <div class="step">
+                <span class="step-number">2</span>
+                <strong>No Edge/Firefox/Outro:</strong>
+                <ul style="margin-left: 40px; margin-top: 10px;">
+                    <li>Acesse: <code style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px;">http://localhost:8000/auth.html</code></li>
+                    <li>Faça login com <strong>MESMA CONTA</strong></li>
+                    <li>Observe o console (F12)</li>
+                </ul>
+            </div>
+            
+            <div class="step success">
+                <span class="step-number">✓</span>
+                <strong>Console deve mostrar:</strong>
+                <div class="code">
+🔥✅ X sessões carregadas do Firebase para: Champion Mestre
+                </div>
+            </div>
+            
+            <div class="step success">
+                <span class="step-number">✓</span>
+                <strong>O histórico do Chrome deve aparecer aqui também!</strong> 🎉
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2><span class="emoji">🔍</span> Como Verificar se Funcionou</h2>
+            
+            <div class="info">
+                <h3 style="margin-bottom: 15px;">✅ Sinais de Sucesso:</h3>
+                
+                <p><strong>1. Ao parar o bot:</strong></p>
+                <div class="code">
+🔥 Sessão salva no Firebase com ID: [ID único]<br>
+✅ Histórico salvo localmente para: Champion Mestre
+                </div>
+                
+                <p style="margin-top: 20px;"><strong>2. Ao fazer login em outro navegador:</strong></p>
+                <div class="code">
+🔥✅ [número] sessões carregadas do Firebase para: Champion Mestre
+                </div>
+                
+                <p style="margin-top: 20px;"><strong>3. Histórico visível em ambos os navegadores com:</strong></p>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li>✅ Mesma data/hora</li>
+                    <li>✅ Mesma estratégia</li>
+                    <li>✅ Mesmo saldo inicial/final</li>
+                    <li>✅ Mesmos trades</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2><span class="emoji">⚠️</span> Se Não Funcionar</h2>
+            
+            <div class="step warning">
+                <strong>1. Verifique se o servidor está rodando:</strong>
+                <div class="code">
+python -m http.server 8000
+                </div>
+            </div>
+            
+            <div class="step warning">
+                <strong>2. Verifique o console por erros:</strong>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li>Pressione <code>F12</code></li>
+                    <li>Vá na aba <code>Console</code></li>
+                    <li>Procure por erros em vermelho</li>
+                </ul>
+            </div>
+            
+            <div class="step warning">
+                <strong>3. Force recarregar do Firebase:</strong>
+                <div class="code">
+localStorage.clear()<br>
+location.reload()
+                </div>
+                <small>Cole isso no console e pressione Enter</small>
+            </div>
+            
+            <div class="step warning">
+                <strong>4. Verifique se tem internet:</strong>
+                <p style="margin-top: 10px;">Firebase precisa de conexão com internet para funcionar!</p>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2><span class="emoji">🚀</span> Iniciar Testes</h2>
+            
+            <a href="http://localhost:8000/auth.html" class="btn" target="_blank">
+                🔐 Abrir Login (Navegador 1)
+            </a>
+            
+            <a href="http://localhost:8000/auth.html" class="btn" target="_blank">
+                🌐 Abrir Login (Navegador 2)
+            </a>
+            
+            <div class="info" style="margin-top: 20px;">
+                <p><strong>💡 Dica:</strong> Clique nos botões acima para abrir em abas separadas e testar a sincronização!</p>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2><span class="emoji">📊</span> O Que é Salvo no Firebase</h2>
+            
+            <div class="code">
+{<br>
+  <span style="color: #48bb78;">username</span>: "Champion Mestre",<br>
+  <span style="color: #48bb78;">startTime</span>: "2025-10-19T19:29:33Z",<br>
+  <span style="color: #48bb78;">endTime</span>: "2025-10-19T19:32:48Z",<br>
+  <span style="color: #48bb78;">strategy</span>: "Champion Pro",<br>
+  <span style="color: #48bb78;">accountType</span>: "demo",<br>
+  <span style="color: #48bb78;">initialBalance</span>: 47160.80,<br>
+  <span style="color: #48bb78;">finalBalance</span>: 48058.32,<br>
+  <span style="color: #48bb78;">profit</span>: 897.52,<br>
+  <span style="color: #48bb78;">totalTrades</span>: 1,<br>
+  <span style="color: #48bb78;">wins</span>: 1,<br>
+  <span style="color: #48bb78;">winRate</span>: 100.0<br>
+}
+            </div>
+        </div>
+    </div>
+</body>
+</html>

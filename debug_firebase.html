@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 Debug Firebase - Histórico</title>
+    <style>
+        body {
+            font-family: 'Consolas', 'Monaco', monospace;
+            background: #1a1f3a;
+            color: #fff;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #00d4ff;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .section {
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .log {
+            background: #000;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            overflow-x: auto;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+        .success { color: #48bb78; }
+        .error { color: #ef4444; }
+        .warning { color: #f6ad55; }
+        .info { color: #00d4ff; }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 5px;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .data-card {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 4px solid #667eea;
+        }
+        pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Debug Firebase - Verificação de Histórico</h1>
+        
+        <div class="section">
+            <h2>📊 Informações do Sistema</h2>
+            <div id="systemInfo" class="log"></div>
+        </div>
+        
+        <div class="section">
+            <h2>🔥 Testes Firebase</h2>
+            <button onclick="testFirebaseConnection()">1️⃣ Testar Conexão Firebase</button>
+            <button onclick="loadFirebaseSessions()">2️⃣ Carregar Sessões do Firebase</button>
+            <button onclick="checkFirestoreRules()">3️⃣ Verificar Regras Firestore</button>
+            <button onclick="testSaveSession()">4️⃣ Testar Salvar Sessão</button>
+            <div id="firebaseLog" class="log"></div>
+        </div>
+        
+        <div class="section">
+            <h2>💾 Testes LocalStorage</h2>
+            <button onclick="checkLocalStorage()">Verificar LocalStorage</button>
+            <button onclick="clearLocalStorage()">Limpar LocalStorage</button>
+            <div id="localStorageLog" class="log"></div>
+        </div>
+        
+        <div class="section">
+            <h2>📋 Sessões Encontradas</h2>
+            <div id="sessionsData"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, addDoc, getDocs, query, where, orderBy, limit } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        // Configuração Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyCWPobM_NmbPG15ulqn9e9z7MKtAdgXjv8",
+            authDomain: "champion-bot-2835b.firebaseapp.com",
+            projectId: "champion-bot-2835b",
+            storageBucket: "champion-bot-2835b.firebasestorage.app",
+            messagingSenderId: "1023800590615",
+            appId: "1:1023800590615:web:e06a993d07a27626ab3752",
+            measurementId: "G-J6C2FDM8M4"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        function log(msg, type = 'info', target = 'systemInfo') {
+            const el = document.getElementById(target);
+            const colorClass = type === 'error' ? 'error' : type === 'warning' ? 'warning' : type === 'success' ? 'success' : 'info';
+            el.innerHTML += `<span class="${colorClass}">[${new Date().toLocaleTimeString()}] ${msg}</span>\n`;
+        }
+
+        function getCurrentUsername() {
+            try {
+                const session = window.ChampionBotAuth?.getActiveSession();
+                return session?.username || 'default_user';
+            } catch (error) {
+                return 'default_user';
+            }
+        }
+
+        // Sistema Info
+        window.onload = () => {
+            const username = getCurrentUsername();
+            log(`🔐 Usuário atual: ${username}`, 'info');
+            log(`🌐 Navegador: ${navigator.userAgent}`, 'info');
+            log(`📍 URL atual: ${window.location.href}`, 'info');
+            log(`🔥 Firebase inicializado: ${app ? 'SIM ✅' : 'NÃO ❌'}`, app ? 'success' : 'error');
+        };
+
+        window.testFirebaseConnection = async () => {
+            const firebaseLog = document.getElementById('firebaseLog');
+            firebaseLog.innerHTML = '';
+            
+            try {
+                log('🔥 Testando conexão com Firebase...', 'info', 'firebaseLog');
+                
+                // Tenta ler a coleção sessions
+                const sessionsRef = collection(db, 'sessions');
+                log('✅ Referência da coleção criada com sucesso', 'success', 'firebaseLog');
+                
+                const snapshot = await getDocs(query(sessionsRef, limit(1)));
+                log(`✅ Conexão bem-sucedida! Firestore está acessível`, 'success', 'firebaseLog');
+                log(`📊 Total de documentos (amostra): ${snapshot.size}`, 'info', 'firebaseLog');
+                
+            } catch (error) {
+                log(`❌ ERRO: ${error.message}`, 'error', 'firebaseLog');
+                log(`📋 Detalhes: ${error.code || 'Sem código'}`, 'error', 'firebaseLog');
+                console.error('Erro completo:', error);
+            }
+        };
+
+        window.loadFirebaseSessions = async () => {
+            const firebaseLog = document.getElementById('firebaseLog');
+            const sessionsData = document.getElementById('sessionsData');
+            firebaseLog.innerHTML = '';
+            sessionsData.innerHTML = '';
+            
+            try {
+                const username = getCurrentUsername();
+                log(`🔍 Buscando sessões para: ${username}`, 'info', 'firebaseLog');
+                
+                // Tentar SEM orderBy primeiro (caso não tenha índice)
+                log('🔍 Tentando buscar SEM orderBy...', 'warning', 'firebaseLog');
+                const q1 = query(
+                    collection(db, 'sessions'),
+                    where('username', '==', username),
+                    limit(50)
+                );
+                
+                const querySnapshot = await getDocs(q1);
+                log(`✅ Consulta executada! Encontradas: ${querySnapshot.size} sessões`, 'success', 'firebaseLog');
+                
+                if (querySnapshot.empty) {
+                    log(`⚠️ Nenhuma sessão encontrada no Firebase para: ${username}`, 'warning', 'firebaseLog');
+                    log(`💡 Isso é normal se você ainda não parou o bot depois da correção`, 'info', 'firebaseLog');
+                } else {
+                    let count = 0;
+                    querySnapshot.forEach((doc) => {
+                        count++;
+                        const data = doc.data();
+                        
+                        const card = document.createElement('div');
+                        card.className = 'data-card';
+                        card.innerHTML = `
+                            <h3>📊 Sessão #${count} <small style="color: #888;">(ID: ${doc.id})</small></h3>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        `;
+                        sessionsData.appendChild(card);
+                        
+                        log(`📄 Sessão ${count}: ${data.strategy} - ${data.accountType}`, 'success', 'firebaseLog');
+                    });
+                    
+                    log(`🎉 Total carregado: ${count} sessões`, 'success', 'firebaseLog');
+                }
+                
+            } catch (error) {
+                log(`❌ ERRO ao carregar: ${error.message}`, 'error', 'firebaseLog');
+                log(`📋 Código: ${error.code}`, 'error', 'firebaseLog');
+                
+                if (error.code === 'failed-precondition') {
+                    log(`⚠️ PROBLEMA: Índice do Firestore não existe!`, 'error', 'firebaseLog');
+                    log(`🔧 SOLUÇÃO: Remova o orderBy ou crie o índice`, 'warning', 'firebaseLog');
+                }
+                
+                console.error('Erro completo:', error);
+            }
+        };
+
+        window.checkFirestoreRules = async () => {
+            const firebaseLog = document.getElementById('firebaseLog');
+            firebaseLog.innerHTML = '';
+            
+            log('🔒 Verificando regras do Firestore...', 'info', 'firebaseLog');
+            
+            try {
+                // Tenta ler um documento
+                const testQuery = query(collection(db, 'sessions'), limit(1));
+                await getDocs(testQuery);
+                log('✅ Leitura permitida - Regras OK para leitura', 'success', 'firebaseLog');
+            } catch (error) {
+                if (error.code === 'permission-denied') {
+                    log('❌ PERMISSÃO NEGADA - Regras bloqueando leitura!', 'error', 'firebaseLog');
+                    log('🔧 Vá ao Firebase Console → Firestore → Regras', 'warning', 'firebaseLog');
+                } else {
+                    log(`⚠️ Erro: ${error.message}`, 'warning', 'firebaseLog');
+                }
+            }
+            
+            try {
+                // Tenta escrever um documento de teste
+                const testData = {
+                    test: true,
+                    timestamp: new Date().toISOString()
+                };
+                await addDoc(collection(db, 'sessions'), testData);
+                log('✅ Escrita permitida - Regras OK para escrita', 'success', 'firebaseLog');
+            } catch (error) {
+                if (error.code === 'permission-denied') {
+                    log('❌ PERMISSÃO NEGADA - Regras bloqueando escrita!', 'error', 'firebaseLog');
+                } else {
+                    log(`⚠️ Erro ao escrever: ${error.message}`, 'warning', 'firebaseLog');
+                }
+            }
+        };
+
+        window.testSaveSession = async () => {
+            const firebaseLog = document.getElementById('firebaseLog');
+            firebaseLog.innerHTML = '';
+            
+            try {
+                const username = getCurrentUsername();
+                log(`💾 Tentando salvar sessão de teste para: ${username}`, 'info', 'firebaseLog');
+                
+                const testSession = {
+                    username: username,
+                    startTime: new Date().toISOString(),
+                    endTime: new Date().toISOString(),
+                    duration: 123,
+                    strategy: 'Test Strategy',
+                    accountType: 'demo',
+                    asset: 'R_50',
+                    assetsUsed: ['R_50'],
+                    initialBalance: 10000,
+                    finalBalance: 10100,
+                    profit: 100,
+                    profitPercent: 1.0,
+                    totalTrades: 1,
+                    wins: 1,
+                    losses: 0,
+                    winRate: 100.0,
+                    stopReason: 'test',
+                    trades: [],
+                    timestamp: new Date().toISOString(),
+                    device: {
+                        userAgent: navigator.userAgent,
+                        platform: navigator.platform,
+                        language: navigator.language
+                    }
+                };
+                
+                const docRef = await addDoc(collection(db, 'sessions'), testSession);
+                log(`✅ Sessão de teste salva com sucesso!`, 'success', 'firebaseLog');
+                log(`📄 ID do documento: ${docRef.id}`, 'success', 'firebaseLog');
+                log(`🎉 Firebase está funcionando corretamente!`, 'success', 'firebaseLog');
+                
+            } catch (error) {
+                log(`❌ ERRO ao salvar: ${error.message}`, 'error', 'firebaseLog');
+                log(`📋 Código: ${error.code}`, 'error', 'firebaseLog');
+                console.error('Erro completo:', error);
+            }
+        };
+
+        window.checkLocalStorage = () => {
+            const localStorageLog = document.getElementById('localStorageLog');
+            localStorageLog.innerHTML = '';
+            
+            const username = getCurrentUsername();
+            const key = `championBotSessionHistory_${username}`;
+            
+            log(`🔍 Verificando localStorage para: ${username}`, 'info', 'localStorageLog');
+            log(`🔑 Chave: ${key}`, 'info', 'localStorageLog');
+            
+            const data = localStorage.getItem(key);
+            
+            if (data) {
+                try {
+                    const sessions = JSON.parse(data);
+                    log(`✅ Dados encontrados! ${sessions.length} sessões`, 'success', 'localStorageLog');
+                    log(`📊 Preview:`, 'info', 'localStorageLog');
+                    localStorageLog.innerHTML += `<pre>${JSON.stringify(sessions, null, 2)}</pre>`;
+                } catch (error) {
+                    log(`❌ Erro ao parsear dados: ${error.message}`, 'error', 'localStorageLog');
+                }
+            } else {
+                log(`⚠️ Nenhum dado encontrado no localStorage`, 'warning', 'localStorageLog');
+            }
+        };
+
+        window.clearLocalStorage = () => {
+            if (confirm('🗑️ Tem certeza? Isso vai limpar TODO o localStorage!')) {
+                localStorage.clear();
+                log('✅ LocalStorage limpo!', 'success', 'localStorageLog');
+            }
+        };
+
+        // Exporta para console
+        window.db = db;
+        window.getCurrentUsername = getCurrentUsername;
+        
+        console.log('🔍 Debug Tool carregado!');
+        console.log('📊 Use as funções no console se necessário:');
+        console.log('  - testFirebaseConnection()');
+        console.log('  - loadFirebaseSessions()');
+        console.log('  - getCurrentUsername()');
+    </script>
+    <script src="auth.js"></script>
+</body>
+</html>
