@@ -324,14 +324,17 @@ function showError(message) {
     const errorText = document.getElementById('errorText');
     const successDiv = document.getElementById('successMessage');
     
-    successDiv.style.display = 'none';
-    errorText.textContent = message;
-    errorDiv.style.display = 'flex';
+    // Verificações de segurança para evitar erros em páginas sem esses elementos
+    if (successDiv) successDiv.style.display = 'none';
+    if (errorText) errorText.textContent = message;
+    if (errorDiv) errorDiv.style.display = 'flex';
     
     // Remove após 5 segundos
-    setTimeout(() => {
-        errorDiv.style.display = 'none';
-    }, 5000);
+    if (errorDiv) {
+        setTimeout(() => {
+            if (errorDiv) errorDiv.style.display = 'none';
+        }, 5000);
+    }
 }
 
 /**
@@ -343,9 +346,10 @@ function showSuccess(message) {
     const successText = document.getElementById('successText');
     const errorDiv = document.getElementById('errorMessage');
     
-    errorDiv.style.display = 'none';
-    successText.textContent = message;
-    successDiv.style.display = 'flex';
+    // Verifica se os elementos existem antes de acessar
+    if (errorDiv) errorDiv.style.display = 'none';
+    if (successText) successText.textContent = message;
+    if (successDiv) successDiv.style.display = 'flex';
 }
 
 /**
@@ -354,6 +358,9 @@ function showSuccess(message) {
 function togglePassword() {
     const passwordInput = document.getElementById('password');
     const toggleIcon = document.getElementById('toggleIcon');
+    
+    // Verificação de segurança
+    if (!passwordInput || !toggleIcon) return;
     
     if (passwordInput.type === 'password') {
         passwordInput.type = 'text';
@@ -370,6 +377,10 @@ function togglePassword() {
  */
 function setLoginButtonState(disabled) {
     const loginBtn = document.getElementById('loginBtn');
+    
+    // Verificação de segurança
+    if (!loginBtn) return;
+    
     loginBtn.disabled = disabled;
     
     if (disabled) {
@@ -392,9 +403,20 @@ async function handleLogin(event) {
     
     setLoginButtonState(true);
     
-    const username = document.getElementById('username').value.trim();
-    const password = document.getElementById('password').value;
-    const rememberMe = document.getElementById('rememberMe').checked;
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+    const rememberMeInput = document.getElementById('rememberMe');
+    
+    // Verificação de segurança
+    if (!usernameInput || !passwordInput) {
+        console.error('Elementos do formulário não encontrados');
+        setLoginButtonState(false);
+        return;
+    }
+    
+    const username = usernameInput.value.trim();
+    const password = passwordInput.value;
+    const rememberMe = rememberMeInput ? rememberMeInput.checked : false;
 
     try {
         // Valida credenciais
@@ -439,12 +461,22 @@ async function handleLogin(event) {
 
 /**
  * Verifica se já há sessão ativa ao carregar a página
+ * Só redireciona se estiver na página de login
  */
 function checkAutoLogin() {
+    // Verifica qual página está aberta
+    const currentPage = window.location.pathname.split('/').pop();
+    
+    // Só faz verificação se estiver em uma das páginas de autenticação
+    const authPages = ['auth.html', 'auth_new.html', 'login.html', 'TEST_AUTH.html'];
+    if (!authPages.includes(currentPage)) {
+        return; // Não faz nada se não estiver em página de login
+    }
+    
     const session = getActiveSession();
     
     if (session) {
-        // Já está logado, redireciona
+        // Já está logado, redireciona para o bot
         showSuccess('✅ Você já está logado! Redirecionando...');
         setTimeout(() => {
             window.location.href = 'index.html';
@@ -461,8 +493,9 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeUserDatabase();
     checkAutoLogin();
     
-    // Foco no campo de usuário
-    document.getElementById('username').focus();
+    // Foco no campo de usuário (com verificação)
+    const usernameField = document.getElementById('username');
+    if (usernameField) usernameField.focus();
 });
 
 // ═══════════════════════════════════════════════════════════════
