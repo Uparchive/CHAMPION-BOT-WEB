@@ -171,6 +171,12 @@ function closeConfig() {
     document.getElementById('configModal').classList.remove('active');
 }
 
+// 🔥 EXPORTA IMEDIATAMENTE PARA ESCOPO GLOBAL
+if (typeof window !== 'undefined') {
+    window.openConfig = openConfig;
+    window.closeConfig = closeConfig;
+}
+
 function selectStrategy(strategyId) {
     // Remove seleção anterior
     document.querySelectorAll('.strategy-card').forEach(card => {
@@ -191,10 +197,20 @@ function selectStrategy(strategyId) {
     log(`📊 Estratégia selecionada: ${STRATEGIES[strategyId].name}`, 'info');
 }
 
+// 🔥 EXPORTA IMEDIATAMENTE PARA ESCOPO GLOBAL
+if (typeof window !== 'undefined') {
+    window.selectStrategy = selectStrategy;
+}
+
 function saveAndClose() {
     saveConfig();
     closeConfig();
     log('✅ Configurações salvas com sucesso!', 'info');
+}
+
+// 🔥 EXPORTA IMEDIATAMENTE PARA ESCOPO GLOBAL
+if (typeof window !== 'undefined') {
+    window.saveAndClose = saveAndClose;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -242,6 +258,11 @@ function selectAccountType(type) {
         }
         log('💰 Modo REAL ativado - ⚠️ DINHEIRO REAL EM RISCO!', 'warning');
     }
+}
+
+// 🔥 EXPORTA IMEDIATAMENTE PARA ESCOPO GLOBAL
+if (typeof window !== 'undefined') {
+    window.selectAccountType = selectAccountType;
 }
 
 // Função para obter token ativo baseado no tipo de conta
@@ -440,6 +461,11 @@ function clearToken() {
     log('🗑️ Token removido do cache', 'warning');
 }
 
+// 🔥 EXPORTA IMEDIATAMENTE PARA ESCOPO GLOBAL
+if (typeof window !== 'undefined') {
+    window.clearToken = clearToken;
+}
+
 function updateRangeValue(rangeId, valueId, suffix = '') {
     const value = document.getElementById(rangeId).value;
     document.getElementById(valueId).textContent = value + suffix;
@@ -472,6 +498,11 @@ function toggleRiskType(riskType, type, silent = false) {
     if (!silent) {
         log(`💡 Tipo de ${riskType === 'stopLoss' ? 'Stop Loss' : 'Take Profit'} alterado para: ${type === 'percent' ? 'Porcentagem' : 'Valor Fixo'}`, 'info');
     }
+}
+
+// 🔥 EXPORTA IMEDIATAMENTE PARA ESCOPO GLOBAL
+if (typeof window !== 'undefined') {
+    window.toggleRiskType = toggleRiskType;
 }
 
 function checkDailyLimits() {
@@ -816,6 +847,11 @@ async function clearSessionHistory() {
     log(`🗑️ Histórico de sessões limpo com sucesso para: ${username}`, 'warning');
 }
 
+// 🔥 EXPORTA IMEDIATAMENTE PARA ESCOPO GLOBAL
+if (typeof window !== 'undefined') {
+    window.clearSessionHistory = clearSessionHistory;
+}
+
 function renderSessionHistory() {
     const container = document.getElementById('sessionHistoryContainer');
     
@@ -1045,6 +1081,11 @@ function applyHistoryFilters() {
     renderFilteredSessions(filteredSessions);
 }
 
+// 🔥 EXPORTA IMEDIATAMENTE PARA ESCOPO GLOBAL
+if (typeof window !== 'undefined') {
+    window.applyHistoryFilters = applyHistoryFilters;
+}
+
 function renderFilteredSessions(filteredSessions) {
     const container = document.getElementById('sessionHistoryContainer');
     
@@ -1186,6 +1227,11 @@ function resetHistoryFilters() {
     document.getElementById('customDateGroup').style.display = 'none';
     
     renderSessionHistory();
+}
+
+// 🔥 EXPORTA IMEDIATAMENTE PARA ESCOPO GLOBAL
+if (typeof window !== 'undefined') {
+    window.resetHistoryFilters = resetHistoryFilters;
 }
 
 // 🆕 ═══════════════════════════════════════════════════════════════
@@ -1659,6 +1705,11 @@ function exportHistoryToPDF() {
     log(`📄 Relatório PDF exportado: ${fileName}`, 'info');
 }
 
+// 🔥 EXPORTA IMEDIATAMENTE PARA ESCOPO GLOBAL
+if (typeof window !== 'undefined') {
+    window.exportHistoryToPDF = exportHistoryToPDF;
+}
+
 // ═══════════════════════════════════════════════════════════════
 // UI UPDATES
 // ═══════════════════════════════════════════════════════════════
@@ -2012,6 +2063,11 @@ async function toggleBot() {
     } else {
         stopBot();
     }
+}
+
+// 🔥 EXPORTA IMEDIATAMENTE PARA ESCOPO GLOBAL
+if (typeof window !== 'undefined') {
+    window.toggleBot = toggleBot;
 }
 
 async function startBot() {
@@ -2824,3 +2880,9 @@ window.onload = () => {
     log('🚀 Champion Bot Web v2.0 carregado!', 'info');
     log('💡 Clique em Configurações para começar', 'info');
 };
+
+// ═══════════════════════════════════════════════════════════════
+// NOTA: Funções já exportadas individualmente ao longo do código
+// Não é mais necessário exportar aqui no final
+// ═══════════════════════════════════════════════════════════════
+

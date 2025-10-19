@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 Teste Firebase - Histórico</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #ffffff;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .status-box {
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .status-box h3 {
+            margin-bottom: 10px;
+            color: #667eea;
+        }
+        
+        .status-box pre {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+        
+        .btn-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .btn {
+            padding: 18px 24px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: white;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(102, 126, 234, 0.6);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            box-shadow: 0 6px 20px rgba(72, 187, 120, 0.4);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+            box-shadow: 0 6px 20px rgba(245, 101, 101, 0.4);
+        }
+        
+        .sessions-list {
+            display: grid;
+            gap: 15px;
+        }
+        
+        .session-card {
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .session-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .session-username {
+            font-size: 1.2em;
+            font-weight: 700;
+            color: #667eea;
+        }
+        
+        .session-time {
+            font-size: 0.9em;
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        .session-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+        }
+        
+        .stat-item {
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+        }
+        
+        .stat-label {
+            font-size: 0.8em;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 5px;
+        }
+        
+        .stat-value {
+            font-size: 1.1em;
+            font-weight: 700;
+        }
+        
+        .profit-positive {
+            color: #48bb78;
+        }
+        
+        .profit-negative {
+            color: #f56565;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2em;
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top-color: #667eea;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧪 Teste Firebase - Histórico</h1>
+            <p>Teste o sistema de salvamento de sessões no Firebase Firestore</p>
+        </div>
+        
+        <div class="status-box">
+            <h3>🔥 Status da Conexão</h3>
+            <pre id="statusLog">Aguardando testes...</pre>
+        </div>
+        
+        <div class="btn-group">
+            <button class="btn btn-primary" onclick="testarConexao()">
+                🔌 Testar Conexão Firebase
+            </button>
+            <button class="btn btn-success" onclick="criarSessaoTeste()">
+                ➕ Criar Sessão de Teste
+            </button>
+            <button class="btn btn-primary" onclick="carregarSessoes()">
+                📊 Carregar Sessões
+            </button>
+            <button class="btn btn-danger" onclick="limparTudo()">
+                🗑️ Limpar Tudo (CUIDADO!)
+            </button>
+        </div>
+        
+        <div class="status-box">
+            <h3>📊 Sessões Carregadas</h3>
+            <div id="sessionsContainer">
+                <div class="loading">
+                    <p>Clique em "Carregar Sessões" para ver os dados</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, addDoc, getDocs, query, where, orderBy, limit, deleteDoc, doc, writeBatch } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        // Configuração do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyCWPobM_NmbPG15ulqn9e9z7MKtAdgXjv8",
+            authDomain: "champion-bot-2835b.firebaseapp.com",
+            projectId: "champion-bot-2835b",
+            storageBucket: "champion-bot-2835b.firebasestorage.app",
+            messagingSenderId: "1023800590615",
+            appId: "1:1023800590615:web:e06a993d07a27626ab3752",
+            measurementId: "G-J6C2FDM8M4"
+        };
+
+        // Inicializar Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Log de status
+        function addLog(message, type = 'info') {
+            const statusLog = document.getElementById('statusLog');
+            const timestamp = new Date().toLocaleTimeString('pt-BR');
+            const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
+            statusLog.textContent += `\n[${timestamp}] ${icon} ${message}`;
+            statusLog.scrollTop = statusLog.scrollHeight;
+        }
+
+        // Testar conexão
+        window.testarConexao = async function() {
+            addLog('Testando conexão com Firebase...', 'info');
+            try {
+                const testQuery = query(collection(db, 'sessions'), limit(1));
+                await getDocs(testQuery);
+                addLog('✅ Conexão com Firebase estabelecida com sucesso!', 'success');
+            } catch (error) {
+                addLog(`❌ Erro ao conectar: ${error.message}`, 'error');
+                console.error(error);
+            }
+        };
+
+        // Criar sessão de teste
+        window.criarSessaoTeste = async function() {
+            addLog('Criando sessão de teste...', 'info');
+            try {
+                const username = prompt('Digite seu username:') || 'teste_usuario';
+                
+                const sessionData = {
+                    username: username,
+                    startTime: new Date(Date.now() - 3600000).toISOString(), // 1h atrás
+                    endTime: new Date().toISOString(),
+                    duration: '1h 00min',
+                    strategy: 'Champion Pro',
+                    accountType: 'demo',
+                    asset: 'R_100',
+                    initialBalance: 1000.00,
+                    finalBalance: 1050.50 + Math.random() * 100,
+                    profit: 50.50 + Math.random() * 100,
+                    profitPercent: 5.05 + Math.random() * 10,
+                    totalTrades: Math.floor(Math.random() * 20) + 5,
+                    wins: Math.floor(Math.random() * 15) + 5,
+                    losses: Math.floor(Math.random() * 10),
+                    winRate: 65.0 + Math.random() * 20,
+                    timestamp: new Date().toISOString(),
+                    device: {
+                        userAgent: navigator.userAgent,
+                        platform: navigator.platform,
+                        language: navigator.language
+                    }
+                };
+                
+                const docRef = await addDoc(collection(db, 'sessions'), sessionData);
+                addLog(`✅ Sessão criada com ID: ${docRef.id}`, 'success');
+                addLog(`Username: ${username}`, 'info');
+                
+                // Recarrega automaticamente
+                setTimeout(() => carregarSessoes(), 500);
+            } catch (error) {
+                addLog(`❌ Erro ao criar sessão: ${error.message}`, 'error');
+                console.error(error);
+            }
+        };
+
+        // Carregar sessões
+        window.carregarSessoes = async function() {
+            addLog('Carregando sessões do Firebase...', 'info');
+            try {
+                const username = prompt('Digite seu username (ou deixe vazio para ver todas):');
+                
+                let q;
+                if (username && username.trim()) {
+                    q = query(
+                        collection(db, 'sessions'),
+                        where('username', '==', username.trim()),
+                        orderBy('timestamp', 'desc'),
+                        limit(20)
+                    );
+                } else {
+                    q = query(
+                        collection(db, 'sessions'),
+                        orderBy('timestamp', 'desc'),
+                        limit(20)
+                    );
+                }
+                
+                const querySnapshot = await getDocs(q);
+                const sessions = [];
+                
+                querySnapshot.forEach((doc) => {
+                    sessions.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                
+                addLog(`✅ ${sessions.length} sessões carregadas`, 'success');
+                renderSessions(sessions);
+            } catch (error) {
+                addLog(`❌ Erro ao carregar: ${error.message}`, 'error');
+                console.error(error);
+            }
+        };
+
+        // Renderizar sessões
+        function renderSessions(sessions) {
+            const container = document.getElementById('sessionsContainer');
+            
+            if (sessions.length === 0) {
+                container.innerHTML = '<div class="loading"><p>📭 Nenhuma sessão encontrada</p></div>';
+                return;
+            }
+            
+            container.innerHTML = sessions.map(session => {
+                const profitClass = session.profit >= 0 ? 'profit-positive' : 'profit-negative';
+                const startDate = new Date(session.startTime).toLocaleString('pt-BR');
+                
+                return `
+                    <div class="session-card">
+                        <div class="session-header">
+                            <div class="session-username">👤 ${session.username}</div>
+                            <div class="session-time">🕐 ${startDate}</div>
+                        </div>
+                        <div class="session-stats">
+                            <div class="stat-item">
+                                <div class="stat-label">Estratégia</div>
+                                <div class="stat-value">${session.strategy}</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Ativo</div>
+                                <div class="stat-value">${session.asset}</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Duração</div>
+                                <div class="stat-value">${session.duration}</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Lucro</div>
+                                <div class="stat-value ${profitClass}">$${session.profit.toFixed(2)}</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">% Lucro</div>
+                                <div class="stat-value ${profitClass}">${session.profitPercent.toFixed(2)}%</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Win Rate</div>
+                                <div class="stat-value">${session.winRate.toFixed(1)}%</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Trades</div>
+                                <div class="stat-value">${session.totalTrades}</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Vitórias</div>
+                                <div class="stat-value profit-positive">${session.wins}</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Derrotas</div>
+                                <div class="stat-value profit-negative">${session.losses}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Limpar tudo
+        window.limparTudo = async function() {
+            if (!confirm('⚠️ TEM CERTEZA que deseja DELETAR TODAS as sessões do Firebase?\n\nEsta ação NÃO pode ser desfeita!')) {
+                return;
+            }
+            
+            const confirmText = prompt('Digite "CONFIRMAR" em maiúsculas para prosseguir:');
+            if (confirmText !== 'CONFIRMAR') {
+                addLog('❌ Operação cancelada', 'info');
+                return;
+            }
+            
+            addLog('🗑️ Deletando todas as sessões...', 'info');
+            try {
+                const q = query(collection(db, 'sessions'));
+                const querySnapshot = await getDocs(q);
+                
+                const batch = writeBatch(db);
+                let count = 0;
+                
+                querySnapshot.forEach((docSnapshot) => {
+                    batch.delete(doc(db, 'sessions', docSnapshot.id));
+                    count++;
+                });
+                
+                await batch.commit();
+                addLog(`✅ ${count} sessões deletadas`, 'success');
+                
+                // Limpa a visualização
+                document.getElementById('sessionsContainer').innerHTML = '<div class="loading"><p>📭 Todas as sessões foram deletadas</p></div>';
+            } catch (error) {
+                addLog(`❌ Erro ao deletar: ${error.message}`, 'error');
+                console.error(error);
+            }
+        };
+
+        // Log inicial
+        addLog('🔥 Firebase inicializado com sucesso!', 'success');
+        addLog('📊 Projeto: Champion Bot', 'info');
+        addLog('✅ Pronto para testes!', 'success');
+    </script>
+</body>
+</html>

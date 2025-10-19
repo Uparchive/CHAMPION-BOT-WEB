@@ -26,6 +26,8 @@ service cloud.firestore {
     }
     
     match /sessions/{sessionId} {
+      // 📊 Sessões do Bot (Histórico)
+      // Cada usuário salva suas sessões automaticamente
       allow read, write: if true;
     }
     
@@ -40,7 +42,7 @@ service cloud.firestore {
 }
 ```
 
-**⚠️ IMPORTANTE**: Estas são regras de **DESENVOLVIMENTO** (permitem tudo). Depois de migrar seus dados e testar, você deve ativar regras mais seguras!
+**⚠️ IMPORTANTE**: Estas são regras de **DESENVOLVIMENTO** (permitem tudo). Depois de migrar seus dados e testar, você deve ativar regras mais seguras!ras!
 
 ### 3️⃣ Colar e Publicar
 ```

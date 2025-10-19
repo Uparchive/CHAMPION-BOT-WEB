@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 Teste de Sistema - Champion Bot</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0f0f23;
+            color: #00ff00;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 30px;
+            border: 2px solid #00ff00;
+            border-radius: 10px;
+        }
+        h1 { color: #ffc107; text-align: center; }
+        h2 { color: #00ff00; border-bottom: 1px solid #00ff00; padding-bottom: 10px; }
+        button {
+            background: #00ff00;
+            color: #000;
+            border: none;
+            padding: 12px 24px;
+            margin: 10px 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #ffc107;
+            transform: scale(1.05);
+        }
+        .success { color: #48bb78; }
+        .error { color: #ef4444; }
+        .warning { color: #ffc107; }
+        .info { color: #60a5fa; }
+        .log {
+            background: rgba(0, 255, 0, 0.1);
+            padding: 15px;
+            margin: 15px 0;
+            border-left: 4px solid #00ff00;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-size: 12px;
+        }
+        .action-box {
+            background: rgba(255, 193, 7, 0.1);
+            padding: 20px;
+            margin: 20px 0;
+            border: 2px solid #ffc107;
+            border-radius: 8px;
+        }
+        pre {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 SISTEMA DE DIAGNÓSTICO E CORREÇÃO</h1>
+        <p style="text-align: center; color: #60a5fa;">Champion Bot - Verificação de Autenticação e Admin</p>
+
+        <div class="action-box">
+            <h2>🔧 ETAPA 1: Configuração Inicial</h2>
+            <button onclick="clearAllData()">🗑️ LIMPAR TODOS OS DADOS</button>
+            <button onclick="setupSystem()">⚙️ CONFIGURAR SISTEMA</button>
+            <button onclick="checkSystem()">🔍 VERIFICAR SISTEMA</button>
+        </div>
+
+        <div class="action-box">
+            <h2>👤 ETAPA 2: Configurar Usuário Mestre</h2>
+            <button onclick="window.location.href='setup_master.html'">👑 Ir para Setup Master</button>
+            <button onclick="createMasterQuick()">⚡ CRIAR MESTRE RÁPIDO</button>
+        </div>
+
+        <div class="action-box">
+            <h2>🔐 ETAPA 3: Testar Login</h2>
+            <button onclick="window.location.href='auth.html'">🔑 Ir para Login</button>
+            <button onclick="testLogin()">🧪 TESTAR LOGIN AUTOMÁTICO</button>
+        </div>
+
+        <div class="action-box">
+            <h2>👨‍💼 ETAPA 4: Acessar Admin</h2>
+            <button onclick="window.location.href='admin.html'">📊 Ir para Admin</button>
+            <button onclick="testAdminAccess()">🧪 TESTAR ACESSO ADMIN</button>
+        </div>
+
+        <h2>📋 LOG DE ATIVIDADES:</h2>
+        <div id="log" class="log">Sistema pronto para diagnóstico...</div>
+    </div>
+
+    <script src="auth.js"></script>
+    <script>
+        const logDiv = document.getElementById('log');
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const colors = {
+                success: '✅',
+                error: '❌',
+                warning: '⚠️',
+                info: 'ℹ️'
+            };
+            const icon = colors[type] || 'ℹ️';
+            
+            logDiv.innerHTML += `\n[${timestamp}] ${icon} ${message}`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(`${icon} ${message}`);
+        }
+
+        function clearAllData() {
+            if (!confirm('🚨 ATENÇÃO!\n\nIsto vai LIMPAR TODOS OS DADOS incluindo usuários e sessões.\n\nTem certeza?')) {
+                return;
+            }
+            
+            logDiv.innerHTML = '';
+            log('🗑️ Limpando todos os dados...', 'warning');
+            
+            localStorage.removeItem('championBotUsers');
+            localStorage.removeItem('championBotUsersV3');
+            localStorage.removeItem('championBotSession');
+            sessionStorage.removeItem('championBotSession');
+            
+            log('✅ Todos os dados foram removidos!', 'success');
+            log('🔄 Sistema resetado. Configure novamente.', 'info');
+        }
+
+        function setupSystem() {
+            log('⚙️ Configurando sistema base...', 'info');
+            
+            try {
+                // Inicializa banco de dados
+                if (window.ChampionBotAuth && window.ChampionBotAuth.initializeUserDatabase) {
+                    window.ChampionBotAuth.initializeUserDatabase();
+                    log('✅ Banco de dados inicializado via auth.js', 'success');
+                } else {
+                    log('⚠️ ChampionBotAuth não disponível, inicializando manualmente', 'warning');
+                    
+                    // Inicializa manualmente
+                    if (!localStorage.getItem('championBotUsersV3')) {
+                        const v3Data = {
+                            users: [],
+                            meta: {
+                                version: 3,
+                                totalUsers: 0,
+                                lastUpdate: new Date().toISOString(),
+                                masterUserConfigured: false
+                            }
+                        };
+                        localStorage.setItem('championBotUsersV3', JSON.stringify(v3Data));
+                        log('✅ Sistema V3 criado manualmente', 'success');
+                    }
+                }
+                
+                log('✅ Sistema configurado! Agora configure o usuário mestre.', 'success');
+                
+            } catch (error) {
+                log('❌ Erro ao configurar sistema: ' + error.message, 'error');
+                console.error(error);
+            }
+        }
+
+        async function createMasterQuick() {
+            log('⚡ Criando usuário mestre rápido...', 'info');
+            
+            try {
+                const masterUsername = 'Champion Mestre';
+                const masterPassword = 'Champion@2025!';
+                const masterEmail = 'master@champion.bot';
+
+                // Gera hash da senha
+                const passwordHash = await hashPassword(masterPassword);
+                log('🔑 Hash de senha gerado', 'success');
+
+                // Sistema Antigo
+                const oldUsers = JSON.parse(localStorage.getItem('championBotUsers') || '{}');
+                oldUsers[masterUsername] = {
+                    username: masterUsername,
+                    email: masterEmail,
+                    passwordHash: passwordHash,
+                    isAdmin: true,
+                    active: true,
+                    createdAt: new Date().toISOString(),
+                    lastLogin: null
+                };
+                localStorage.setItem('championBotUsers', JSON.stringify(oldUsers));
+                log('✅ Usuário criado no sistema antigo', 'success');
+
+                // Sistema V3
+                const v3Data = JSON.parse(localStorage.getItem('championBotUsersV3') || '{"users": [], "meta": {}}');
+                v3Data.users = v3Data.users.filter(u => u.username !== masterUsername);
+                
+                const masterUser = {
+                    id: 'MASTER_USER_001',
+                    username: masterUsername,
+                    email: masterEmail,
+                    passwordHash: passwordHash,
+                    isAdmin: true,
+                    active: true,
+                    subscriptionType: 'permanent',
+                    expiryDate: null,
+                    createdAt: new Date().toISOString(),
+                    lastLogin: null,
+                    lastActivity: new Date().toISOString(),
+                    metadata: {
+                        role: 'SUPER_ADMIN',
+                        permissions: 'ALL',
+                        setupDate: new Date().toISOString()
+                    }
+                };
+
+                v3Data.users.unshift(masterUser);
+                v3Data.meta = {
+                    version: 3,
+                    totalUsers: v3Data.users.length,
+                    lastUpdate: new Date().toISOString(),
+                    masterUserConfigured: true
+                };
+
+                localStorage.setItem('championBotUsersV3', JSON.stringify(v3Data));
+                log('✅ Usuário criado no sistema V3', 'success');
+                log('', 'info');
+                log('🎉 USUÁRIO MESTRE CRIADO COM SUCESSO!', 'success');
+                log('👤 Usuário: Champion Mestre', 'info');
+                log('🔑 Senha: Champion@2025!', 'info');
+                log('', 'info');
+                log('Agora você pode fazer login!', 'success');
+
+            } catch (error) {
+                log('❌ Erro ao criar mestre: ' + error.message, 'error');
+                console.error(error);
+            }
+        }
+
+        async function testLogin() {
+            log('🧪 Testando login automático...', 'info');
+            
+            try {
+                const username = 'Champion Mestre';
+                const password = 'Champion@2025!';
+                
+                log(`👤 Usuário: ${username}`, 'info');
+                
+                // Valida credenciais
+                const isValid = await window.ChampionBotAuth.validateCredentials(username, password);
+                
+                if (!isValid) {
+                    log('❌ Credenciais inválidas!', 'error');
+                    log('💡 Execute: CONFIGURAR SISTEMA e depois CRIAR MESTRE RÁPIDO', 'warning');
+                    return;
+                }
+                
+                log('✅ Credenciais válidas!', 'success');
+                
+                // Cria sessão
+                window.ChampionBotAuth.createSession(username, true);
+                log('✅ Sessão criada!', 'success');
+                
+                // Verifica sessão
+                const session = window.ChampionBotAuth.getActiveSession();
+                if (session) {
+                    log('✅ Sessão ativa confirmada!', 'success');
+                    log(`📅 Login: ${session.loginTime}`, 'info');
+                    log(`⏰ Expira: ${session.expiresAt}`, 'info');
+                } else {
+                    log('❌ Falha ao criar sessão', 'error');
+                    return;
+                }
+                
+                log('', 'info');
+                log('🎉 LOGIN BEM-SUCEDIDO!', 'success');
+                log('Agora você pode acessar o painel admin!', 'success');
+                
+            } catch (error) {
+                log('❌ Erro no teste de login: ' + error.message, 'error');
+                console.error(error);
+            }
+        }
+
+        function testAdminAccess() {
+            log('🧪 Testando acesso ao admin...', 'info');
+            
+            try {
+                // Verifica sessão
+                const session = window.ChampionBotAuth.getActiveSession();
+                
+                if (!session) {
+                    log('❌ Nenhuma sessão ativa!', 'error');
+                    log('💡 Execute: TESTAR LOGIN AUTOMÁTICO primeiro', 'warning');
+                    return;
+                }
+                
+                log(`✅ Sessão encontrada: ${session.username}`, 'success');
+                
+                // Busca usuário no V3
+                const v3Data = JSON.parse(localStorage.getItem('championBotUsersV3') || '{"users": []}');
+                const user = v3Data.users.find(u => u.username === session.username);
+                
+                if (!user) {
+                    log('❌ Usuário não encontrado no sistema V3!', 'error');
+                    log('💡 Execute: CRIAR MESTRE RÁPIDO', 'warning');
+                    return;
+                }
+                
+                log(`✅ Usuário encontrado: ${user.username}`, 'success');
+                log(`👨‍💼 Admin: ${user.isAdmin}`, user.isAdmin ? 'success' : 'error');
+                log(`✅ Ativo: ${user.active}`, user.active ? 'success' : 'error');
+                log(`♾️ Tipo: ${user.subscriptionType}`, 'info');
+                
+                if (!user.isAdmin) {
+                    log('❌ Usuário não tem permissão de admin!', 'error');
+                    return;
+                }
+                
+                if (!user.active) {
+                    log('❌ Usuário não está ativo!', 'error');
+                    return;
+                }
+                
+                log('', 'info');
+                log('🎉 ACESSO AUTORIZADO AO PAINEL ADMIN!', 'success');
+                log('Redirecionando em 2 segundos...', 'info');
+                
+                setTimeout(() => {
+                    window.location.href = 'admin.html';
+                }, 2000);
+                
+            } catch (error) {
+                log('❌ Erro no teste de admin: ' + error.message, 'error');
+                console.error(error);
+            }
+        }
+
+        function checkSystem() {
+            logDiv.innerHTML = '';
+            log('🔍 VERIFICANDO SISTEMA...', 'info');
+            log('', 'info');
+            
+            try {
+                // 1. Sistema Antigo
+                log('═══════════════════════════════════════', 'info');
+                log('📦 SISTEMA ANTIGO (championBotUsers)', 'info');
+                log('═══════════════════════════════════════', 'info');
+                
+                const oldUsers = JSON.parse(localStorage.getItem('championBotUsers') || '{}');
+                const oldUserCount = Object.keys(oldUsers).length;
+                
+                log(`Usuários: ${oldUserCount}`, oldUserCount > 0 ? 'success' : 'warning');
+                
+                if (oldUserCount > 0) {
+                    Object.keys(oldUsers).forEach(username => {
+                        const user = oldUsers[username];
+                        log(`  • ${username} - Admin: ${user.isAdmin}, Ativo: ${user.active}`, 'info');
+                    });
+                } else {
+                    log('⚠️ Nenhum usuário no sistema antigo', 'warning');
+                }
+                
+                log('', 'info');
+                
+                // 2. Sistema V3
+                log('═══════════════════════════════════════', 'info');
+                log('📦 SISTEMA V3 (championBotUsersV3)', 'info');
+                log('═══════════════════════════════════════', 'info');
+                
+                const v3Data = JSON.parse(localStorage.getItem('championBotUsersV3') || '{"users": [], "meta": {}}');
+                const v3UserCount = v3Data.users ? v3Data.users.length : 0;
+                
+                log(`Usuários: ${v3UserCount}`, v3UserCount > 0 ? 'success' : 'warning');
+                log(`Versão: ${v3Data.meta?.version || 'N/A'}`, 'info');
+                log(`Master Configurado: ${v3Data.meta?.masterUserConfigured || false}`, 'info');
+                
+                if (v3UserCount > 0) {
+                    v3Data.users.forEach(user => {
+                        log(`  • ${user.username} - Admin: ${user.isAdmin}, Ativo: ${user.active}, Tipo: ${user.subscriptionType}`, 'info');
+                    });
+                } else {
+                    log('⚠️ Nenhum usuário no sistema V3', 'warning');
+                }
+                
+                log('', 'info');
+                
+                // 3. Sessão
+                log('═══════════════════════════════════════', 'info');
+                log('🔐 SESSÃO ATIVA', 'info');
+                log('═══════════════════════════════════════', 'info');
+                
+                const sessionTemp = sessionStorage.getItem('championBotSession');
+                const sessionPerm = localStorage.getItem('championBotSession');
+                
+                if (sessionTemp) {
+                    const session = JSON.parse(sessionTemp);
+                    log('✅ Sessão temporária encontrada', 'success');
+                    log(`  Usuário: ${session.username}`, 'info');
+                    log(`  Login: ${session.loginTime}`, 'info');
+                    log(`  Expira: ${session.expiresAt}`, 'info');
+                } else if (sessionPerm) {
+                    const session = JSON.parse(sessionPerm);
+                    log('✅ Sessão permanente encontrada', 'success');
+                    log(`  Usuário: ${session.username}`, 'info');
+                    log(`  Login: ${session.loginTime}`, 'info');
+                    log(`  Expira: ${session.expiresAt}`, 'info');
+                } else {
+                    log('⚠️ Nenhuma sessão ativa', 'warning');
+                }
+                
+                log('', 'info');
+                log('═══════════════════════════════════════', 'info');
+                log('✅ VERIFICAÇÃO CONCLUÍDA', 'success');
+                log('═══════════════════════════════════════', 'info');
+                
+            } catch (error) {
+                log('❌ Erro na verificação: ' + error.message, 'error');
+                console.error(error);
+            }
+        }
+
+        // Função para hash (mesma do auth.js)
+        async function hashPassword(password) {
+            const salt = 'ChampionBot2025_SecureSalt';
+            const message = password + salt;
+            const msgBuffer = new TextEncoder().encode(message);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            return hashHex;
+        }
+
+        // Auto-check ao carregar
+        window.addEventListener('DOMContentLoaded', function() {
+            log('🚀 Sistema de diagnóstico carregado!', 'success');
+            log('', 'info');
+            log('💡 GUIA RÁPIDO:', 'info');
+            log('1️⃣ CONFIGURAR SISTEMA (primeira vez)', 'info');
+            log('2️⃣ CRIAR MESTRE RÁPIDO', 'info');
+            log('3️⃣ TESTAR LOGIN AUTOMÁTICO', 'info');
+            log('4️⃣ TESTAR ACESSO ADMIN ou IR PARA ADMIN', 'info');
+            log('', 'info');
+        });
+    </script>
+</body>
+</html>
