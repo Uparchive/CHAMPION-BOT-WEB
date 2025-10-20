@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 Debug: GitHub Pages vs Local</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #fff;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+
+        .panel h2 {
+            margin-bottom: 15px;
+            font-size: 1.5em;
+            border-bottom: 2px solid rgba(255,255,255,0.3);
+            padding-bottom: 10px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+        }
+
+        .info-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #00ff88;
+        }
+
+        .info-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            font-size: 1.3em;
+            font-weight: bold;
+            word-break: break-all;
+        }
+
+        button {
+            padding: 15px 25px;
+            font-size: 1.1em;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #fff;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            width: 100%;
+            margin: 10px 0;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        #logContainer {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            max-height: 500px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .log-entry {
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            border-radius: 5px;
+            border-left: 4px solid #00ff88;
+            background: rgba(255, 255, 255, 0.05);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .log-success { border-left-color: #00ff88; color: #00ff88; }
+        .log-error { border-left-color: #ff4757; color: #ff4757; }
+        .log-warning { border-left-color: #ffa502; color: #ffa502; }
+        .log-info { border-left-color: #00d2ff; color: #00d2ff; }
+
+        .code-block {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+            margin: 5px;
+        }
+
+        .badge-success { background: #00ff88; color: #000; }
+        .badge-error { background: #ff4757; color: #fff; }
+        .badge-warning { background: #ffa502; color: #000; }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Debug: GitHub Pages vs Local</h1>
+
+        <!-- Informações do Ambiente -->
+        <div class="panel">
+            <h2>🌐 Informações do Ambiente</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">URL Atual</div>
+                    <div class="info-value" id="currentUrl" style="font-size: 0.8em;">Carregando...</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Ambiente</div>
+                    <div class="info-value" id="environment">Detectando...</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Protocolo</div>
+                    <div class="info-value" id="protocol">Verificando...</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Módulos ES6</div>
+                    <div class="info-value" id="moduleSupport">Testando...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Teste do Firebase -->
+        <div class="panel">
+            <h2>🔥 Teste de Conexão Firebase</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">Status Firebase</div>
+                    <div class="info-value" id="firebaseStatus">Testando...</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Projeto ID</div>
+                    <div class="info-value" id="projectId" style="font-size: 0.9em;">N/A</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Auth Domain</div>
+                    <div class="info-value" id="authDomain" style="font-size: 0.8em;">N/A</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Sessões Encontradas</div>
+                    <div class="info-value" id="sessionCount">0</div>
+                </div>
+            </div>
+
+            <button onclick="testFirebase()">🔥 Testar Firebase</button>
+            <button onclick="testQuery()">📊 Testar Query de Sessões</button>
+            <button onclick="checkCORS()">🌐 Verificar CORS</button>
+        </div>
+
+        <!-- Diagnóstico -->
+        <div class="panel">
+            <h2>🔍 Diagnóstico</h2>
+            <div id="diagnosis">
+                <p style="opacity: 0.7;">Clique nos botões acima para executar testes...</p>
+            </div>
+        </div>
+
+        <!-- Logs -->
+        <div class="panel">
+            <h2>📋 Logs Detalhados</h2>
+            <div id="logContainer">
+                <div class="log-entry log-info">Aguardando testes...</div>
+            </div>
+        </div>
+
+        <!-- Solução -->
+        <div class="panel">
+            <h2>💡 Possíveis Soluções</h2>
+            <div id="solutions">
+                <p>As soluções aparecerão aqui após os testes...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, query, where, getDocs, limit } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        // Configuração do Firebase - MESMA do app.js
+        const firebaseConfig = {
+            apiKey: "AIzaSyCWPobM_NmbPG15ulqn9e9z7MKtAdgXjv8",
+            authDomain: "champion-bot-2835b.firebaseapp.com",
+            projectId: "champion-bot-2835b",
+            storageBucket: "champion-bot-2835b.firebasestorage.app",
+            messagingSenderId: "1023800590615",
+            appId: "1:1023800590615:web:e06a993d07a27626ab3752",
+            measurementId: "G-J6C2FDM8M4"
+        };
+
+        let app, db;
+
+        try {
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            
+            window.db = db;
+            window.collection = collection;
+            window.query = query;
+            window.where = where;
+            window.getDocs = getDocs;
+            window.limit = limit;
+
+            addLog('✅ Firebase SDK carregado com sucesso', 'success');
+            document.getElementById('firebaseStatus').textContent = '✅ Inicializado';
+            document.getElementById('projectId').textContent = firebaseConfig.projectId;
+            document.getElementById('authDomain').textContent = firebaseConfig.authDomain;
+        } catch (error) {
+            addLog(`❌ Erro ao carregar Firebase: ${error.message}`, 'error');
+            document.getElementById('firebaseStatus').textContent = '❌ Erro';
+        }
+    </script>
+
+    <!-- Auth Script -->
+    <script src="auth.js"></script>
+
+    <!-- Script Principal -->
+    <script>
+        function addLog(message, type = 'info') {
+            const logContainer = document.getElementById('logContainer');
+            const timestamp = new Date().toLocaleTimeString('pt-BR');
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry log-${type}`;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        function detectEnvironment() {
+            const url = window.location.href;
+            const protocol = window.location.protocol;
+            const hostname = window.location.hostname;
+
+            document.getElementById('currentUrl').textContent = url;
+            document.getElementById('protocol').textContent = protocol;
+
+            let environment = '';
+            if (hostname.includes('github.io') || hostname.includes('github')) {
+                environment = '🌐 GitHub Pages';
+                addLog('🌐 Detectado: GitHub Pages', 'info');
+            } else if (hostname === 'localhost' || hostname === '127.0.0.1') {
+                environment = '💻 Local (localhost)';
+                addLog('💻 Detectado: Servidor Local', 'info');
+            } else {
+                environment = '🌍 Outro servidor';
+                addLog(`🌍 Detectado: ${hostname}`, 'info');
+            }
+
+            document.getElementById('environment').textContent = environment;
+
+            // Verificar suporte a módulos
+            if (typeof import.meta !== 'undefined' || document.currentScript?.type === 'module') {
+                document.getElementById('moduleSupport').textContent = '✅ Suportado';
+                addLog('✅ Módulos ES6 suportados', 'success');
+            } else {
+                document.getElementById('moduleSupport').textContent = '⚠️ Limitado';
+                addLog('⚠️ Suporte a módulos limitado', 'warning');
+            }
+        }
+
+        function getCurrentUsername() {
+            try {
+                const session = window.ChampionBotAuth?.getActiveSession();
+                if (session && session.username) {
+                    return session.username;
+                }
+                addLog('⚠️ Usuário não autenticado, usando "Champion" como teste', 'warning');
+                return 'Champion'; // Usuário de teste
+            } catch (error) {
+                addLog(`⚠️ Erro ao obter usuário: ${error.message}`, 'warning');
+                return 'Champion';
+            }
+        }
+
+        async function testFirebase() {
+            addLog('🔥 Testando conexão com Firebase...', 'info');
+            
+            try {
+                if (!window.db) {
+                    throw new Error('Firebase não inicializado');
+                }
+
+                addLog('✅ Firebase database disponível', 'success');
+                addLog(`📚 Projeto: champion-bot-2835b`, 'info');
+                
+                document.getElementById('diagnosis').innerHTML = `
+                    <div class="badge badge-success">Firebase Inicializado</div>
+                    <p style="margin-top: 15px;">Firebase está funcionando corretamente. Prosseguindo com teste de query...</p>
+                `;
+
+                return true;
+            } catch (error) {
+                addLog(`❌ Erro na conexão: ${error.message}`, 'error');
+                
+                document.getElementById('diagnosis').innerHTML = `
+                    <div class="badge badge-error">Firebase com Erro</div>
+                    <p style="margin-top: 15px; color: #ff4757;"><strong>Erro:</strong> ${error.message}</p>
+                `;
+
+                return false;
+            }
+        }
+
+        async function testQuery() {
+            addLog('📊 Testando query de sessões...', 'info');
+
+            try {
+                const username = getCurrentUsername();
+                addLog(`👤 Usuário: ${username}`, 'info');
+
+                // Query SEM orderBy para evitar erro de índice
+                const q = query(
+                    collection(window.db, 'sessions'),
+                    where('username', '==', username),
+                    limit(10)
+                );
+
+                addLog('🔍 Executando getDocs()...', 'info');
+                const querySnapshot = await getDocs(q);
+
+                const sessionCount = querySnapshot.size;
+                document.getElementById('sessionCount').textContent = sessionCount;
+
+                if (sessionCount === 0) {
+                    addLog(`⚠️ Nenhuma sessão encontrada para usuário: ${username}`, 'warning');
+                    
+                    document.getElementById('diagnosis').innerHTML = `
+                        <div class="badge badge-warning">Sem Sessões</div>
+                        <p style="margin-top: 15px;">
+                            <strong>Resultado:</strong> Firebase está funcionando, mas não há sessões para o usuário "${username}".<br><br>
+                            <strong>Possíveis causas:</strong><br>
+                            1. Você ainda não criou nenhuma sessão<br>
+                            2. Usuário diferente entre local e GitHub<br>
+                            3. Sessões foram salvas em outro projeto Firebase
+                        </p>
+                    `;
+
+                    document.getElementById('solutions').innerHTML = `
+                        <h3>💡 Soluções:</h3>
+                        <ol style="line-height: 1.8; margin-top: 15px;">
+                            <li><strong>Criar uma sessão de teste:</strong>
+                                <ul>
+                                    <li>Abra o bot no GitHub Pages</li>
+                                    <li>Faça login com o usuário "${username}"</li>
+                                    <li>Configure e inicie o bot</li>
+                                    <li>Faça pelo menos 1 operação</li>
+                                    <li>Pare o bot para salvar a sessão</li>
+                                </ul>
+                            </li>
+                            <li><strong>Verificar usuário:</strong>
+                                <ul>
+                                    <li>Certifique-se de estar logado com o mesmo usuário no local e GitHub</li>
+                                    <li>No console: <code>getCurrentUsername()</code></li>
+                                </ul>
+                            </li>
+                            <li><strong>Migrar sessões locais:</strong>
+                                <ul>
+                                    <li>Use o botão "Sincronizar com Firebase" no bot</li>
+                                    <li>Ou copie manualmente do localStorage para Firebase</li>
+                                </ul>
+                            </li>
+                        </ol>
+                    `;
+                } else {
+                    addLog(`✅ ${sessionCount} sessões encontradas!`, 'success');
+
+                    const sessions = [];
+                    querySnapshot.forEach((doc) => {
+                        const data = doc.data();
+                        sessions.push({
+                            id: doc.id,
+                            strategy: data.strategy,
+                            profit: data.profit,
+                            totalTrades: data.totalTrades,
+                            startTime: data.startTime
+                        });
+                        addLog(`  📄 ${doc.id.substring(0, 8)}... | ${data.strategy} | $${data.profit || 0}`, 'info');
+                    });
+
+                    document.getElementById('diagnosis').innerHTML = `
+                        <div class="badge badge-success">✅ Tudo Funcionando!</div>
+                        <p style="margin-top: 15px;">
+                            <strong>Resultado:</strong> Firebase está funcionando perfeitamente!<br>
+                            <strong>Sessões encontradas:</strong> ${sessionCount}<br>
+                            <strong>Usuário:</strong> ${username}
+                        </p>
+                        <div class="code-block">
+                            ${sessions.map(s => `${s.strategy} | Trades: ${s.totalTrades} | Profit: $${s.profit || 0}`).join('<br>')}
+                        </div>
+                    `;
+
+                    document.getElementById('solutions').innerHTML = `
+                        <h3>✅ Tudo está funcionando!</h3>
+                        <p style="margin-top: 15px; line-height: 1.8;">
+                            O Firebase está carregando sessões corretamente. Se o histórico não aparece na página principal:<br><br>
+                            <strong>1. Verificar se loadSessionHistory() é chamado:</strong><br>
+                            - Abra o console (F12) na página principal<br>
+                            - Procure por: "🔥 Carregando histórico do Firebase..."<br>
+                            - Execute manualmente: <code>window.loadSessionHistory()</code><br><br>
+                            
+                            <strong>2. Verificar elemento HTML:</strong><br>
+                            - Certifique-se de que existe: <code>&lt;div id="sessionHistoryContainer"&gt;&lt;/div&gt;</code><br>
+                            - Inspecione o elemento (F12 → Elements)<br><br>
+                            
+                            <strong>3. Limpar cache:</strong><br>
+                            - Pressione Ctrl+Shift+Delete<br>
+                            - Limpe "Imagens e arquivos em cache"<br>
+                            - Recarregue com Ctrl+F5
+                        </p>
+                    `;
+                }
+            } catch (error) {
+                addLog(`❌ Erro na query: ${error.message}`, 'error');
+                addLog(`🔍 Código: ${error.code}`, 'error');
+                console.error('Erro completo:', error);
+
+                document.getElementById('diagnosis').innerHTML = `
+                    <div class="badge badge-error">Erro na Query</div>
+                    <p style="margin-top: 15px; color: #ff4757;">
+                        <strong>Erro:</strong> ${error.message}<br>
+                        <strong>Código:</strong> ${error.code || 'N/A'}
+                    </p>
+                `;
+
+                if (error.code === 'permission-denied') {
+                    document.getElementById('solutions').innerHTML = `
+                        <h3>🔐 Erro de Permissão</h3>
+                        <p style="margin-top: 15px; line-height: 1.8;">
+                            <strong>Problema:</strong> As regras do Firestore estão bloqueando o acesso.<br><br>
+                            
+                            <strong>Solução:</strong><br>
+                            1. Abra o Firebase Console: <a href="https://console.firebase.google.com/project/champion-bot-2835b/firestore" target="_blank" style="color: #00ff88;">champion-bot-2835b</a><br>
+                            2. Vá em Firestore Database → Regras<br>
+                            3. Use estas regras temporárias para teste:<br>
+                        </p>
+                        <div class="code-block">
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /sessions/{session} {
+      allow read, write: if true; // TESTE - Permitir tudo
+    }
+    match /users/{user} {
+      allow read, write: if true;
+    }
+  }
+}
+                        </div>
+                        <p style="margin-top: 15px; color: #ffa502;">
+                            ⚠️ <strong>Importante:</strong> Estas regras são apenas para TESTE. Configure autenticação adequada em produção!
+                        </p>
+                    `;
+                } else if (error.code === 'failed-precondition') {
+                    document.getElementById('solutions').innerHTML = `
+                        <h3>📊 Erro de Índice</h3>
+                        <p style="margin-top: 15px;">
+                            O Firestore precisa de um índice composto. Mas NÃO deveria acontecer porque removemos o orderBy...<br><br>
+                            <strong>Verifique se o app.js está usando a versão correta (SEM orderBy)</strong>
+                        </p>
+                    `;
+                }
+            }
+        }
+
+        async function checkCORS() {
+            addLog('🌐 Verificando configuração CORS...', 'info');
+
+            const protocol = window.location.protocol;
+            const hostname = window.location.hostname;
+
+            if (protocol === 'file:') {
+                addLog('❌ ERRO: Protocolo file:// detectado', 'error');
+                addLog('🔧 Solução: Use um servidor HTTP (localhost:8000)', 'warning');
+                
+                document.getElementById('solutions').innerHTML = `
+                    <h3>❌ Erro de Protocolo</h3>
+                    <p style="margin-top: 15px; color: #ff4757;">
+                        <strong>Problema:</strong> Você está abrindo o arquivo diretamente (file://)<br>
+                        Módulos ES6 e Firebase não funcionam com file://<br><br>
+                        
+                        <strong>Solução:</strong><br>
+                        1. Abra o terminal no diretório do bot<br>
+                        2. Execute: <code>python -m http.server 8000</code><br>
+                        3. Acesse: <code>http://localhost:8000</code>
+                    </p>
+                `;
+            } else if (protocol === 'https:' || (protocol === 'http:' && hostname === 'localhost')) {
+                addLog('✅ Protocolo correto: ' + protocol, 'success');
+                addLog('✅ CORS OK - Firebase pode ser acessado', 'success');
+            } else {
+                addLog('⚠️ Protocolo HTTP sem localhost - pode ter problemas CORS', 'warning');
+            }
+        }
+
+        // Inicialização
+        window.addEventListener('load', () => {
+            addLog('🚀 Página de debug carregada', 'success');
+            detectEnvironment();
+            addLog('💡 Clique nos botões para executar testes', 'info');
+        });
+    </script>
+</body>
+</html>

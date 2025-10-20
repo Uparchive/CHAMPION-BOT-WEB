@@ -817,27 +817,33 @@ async function loadSessionHistory() {
             
             querySnapshot.forEach((doc) => {
                 const data = doc.data();
-                firebaseSessions.push({
+                // ✅ Proteção completa contra valores undefined/null
+                const sessionData = {
                     id: doc.id,
-                    startTime: new Date(data.startTime),
-                    endTime: new Date(data.endTime),
-                    duration: data.duration,
-                    strategy: data.strategy,
-                    accountType: data.accountType,
-                    asset: data.asset,
-                    assetsUsed: data.assetsUsed || [data.asset],
-                    initialBalance: data.initialBalance,
-                    finalBalance: data.finalBalance,
-                    endBalance: data.finalBalance, // compatibilidade
-                    profit: data.profit,
-                    profitPercent: data.profitPercent,
-                    totalTrades: data.totalTrades,
-                    wins: data.wins,
-                    losses: data.losses,
-                    winRate: data.winRate,
+                    startTime: data.startTime ? new Date(data.startTime) : new Date(),
+                    endTime: data.endTime ? new Date(data.endTime) : new Date(),
+                    duration: data.duration || 0,
+                    strategy: data.strategy || 'Desconhecida',
+                    strategyName: data.strategy || 'Desconhecida',
+                    accountType: data.accountType || 'demo',
+                    asset: data.asset || 'N/A',
+                    assetsUsed: data.assetsUsed || [data.asset || 'N/A'],
+                    initialBalance: data.initialBalance || 0,
+                    startBalance: data.initialBalance || 0,
+                    finalBalance: data.finalBalance || 0,
+                    endBalance: data.finalBalance || 0,
+                    profit: data.profit || 0,
+                    totalProfit: data.profit || 0,
+                    profitPercent: data.profitPercent || 0,
+                    totalTrades: data.totalTrades || 0,
+                    wins: data.wins || 0,
+                    losses: data.losses || 0,
+                    winRate: data.winRate || 0,
                     stopReason: data.stopReason || 'manual',
                     trades: data.trades || []
-                });
+                };
+                
+                firebaseSessions.push(sessionData);
             });
             
             if (firebaseSessions.length > 0) {
@@ -875,10 +881,21 @@ async function loadSessionHistory() {
             sessionHistory = JSON.parse(saved);
             // Converter strings de data de volta para Date objects
             sessionHistory.forEach(session => {
-                session.startTime = new Date(session.startTime);
-                if (session.endTime) {
-                    session.endTime = new Date(session.endTime);
-                }
+                session.startTime = session.startTime ? new Date(session.startTime) : new Date();
+                session.endTime = session.endTime ? new Date(session.endTime) : new Date();
+                
+                // ✅ Garantir campos obrigatórios
+                session.trades = session.trades || [];
+                session.wins = session.wins || 0;
+                session.losses = session.losses || 0;
+                session.profit = session.profit || session.totalProfit || 0;
+                session.totalProfit = session.totalProfit || session.profit || 0;
+                session.startBalance = session.startBalance || session.initialBalance || 0;
+                session.endBalance = session.endBalance || session.finalBalance || 0;
+                session.duration = session.duration || 0;
+                session.strategy = session.strategy || 'Desconhecida';
+                session.strategyName = session.strategyName || session.strategy || 'Desconhecida';
+                session.assetsUsed = session.assetsUsed || [session.asset || 'N/A'];
             });
             console.log(`💾 Histórico carregado do localStorage para: ${username} - ${sessionHistory.length} sessões`);
             log(`💾 ${sessionHistory.length} sessões carregadas do cache local`, 'info');
@@ -891,6 +908,7 @@ async function loadSessionHistory() {
     } catch (error) {
         console.error('❌ Erro ao carregar histórico:', error);
         sessionHistory = [];
+        renderSessionHistory();
     }
 }
 
@@ -955,13 +973,134 @@ async function clearSessionHistory() {
     log(`🗑️ Histórico de sessões limpo com sucesso para: ${username}`, 'warning');
 }
 
+// 🆕 ═══════════════════════════════════════════════════════════════
+// SINCRONIZAR SESSÕES LOCAIS COM FIREBASE
+// ═══════════════════════════════════════════════════════════════
+async function syncLocalToFirebase() {
+    try {
+        const username = getCurrentUsername();
+        const storageKey = getUserStorageKey('championBotSessionHistory');
+        
+        console.log(`🔄 Iniciando sincronização para usuário: ${username}`);
+        log('🔄 Iniciando sincronização com Firebase...', 'info');
+        
+        // Verificar se há sessões locais
+        const saved = localStorage.getItem(storageKey);
+        if (!saved) {
+            log('⚠️ Nenhuma sessão local encontrada para sincronizar', 'warning');
+            alert('⚠️ Nenhuma sessão local encontrada para sincronizar.');
+            return;
+        }
+        
+        const localSessions = JSON.parse(saved);
+        console.log(`📊 ${localSessions.length} sessões encontradas localmente`);
+        
+        if (localSessions.length === 0) {
+            log('⚠️ Nenhuma sessão local para sincronizar', 'warning');
+            alert('⚠️ Nenhuma sessão local para sincronizar.');
+            return;
+        }
+        
+        // Confirmar com usuário
+        const confirm = window.confirm(
+            `🔄 Sincronizar ${localSessions.length} sessões locais com Firebase?\n\n` +
+            `Isso enviará todas as suas sessões salvas localmente para a nuvem.\n\n` +
+            `Após a sincronização, elas ficarão disponíveis em qualquer dispositivo.`
+        );
+        
+        if (!confirm) {
+            log('❌ Sincronização cancelada pelo usuário', 'warning');
+            return;
+        }
+        
+        // Sincronizar cada sessão
+        let syncedCount = 0;
+        let errorCount = 0;
+        
+        for (let i = 0; i < localSessions.length; i++) {
+            const session = localSessions[i];
+            
+            try {
+                // Preparar dados para Firebase
+                const sessionData = {
+                    username: username,
+                    startTime: session.startTime || new Date().toISOString(),
+                    endTime: session.endTime || new Date().toISOString(),
+                    duration: session.duration || 0,
+                    strategy: session.strategy || session.strategyName || 'Desconhecida',
+                    accountType: session.accountType || 'demo',
+                    asset: session.asset || 'N/A',
+                    assetsUsed: session.assetsUsed || [session.asset || 'N/A'],
+                    initialBalance: session.startBalance || session.initialBalance || 0,
+                    finalBalance: session.endBalance || session.finalBalance || 0,
+                    profit: session.totalProfit || session.profit || 0,
+                    profitPercent: session.profitPercent || 0,
+                    totalTrades: session.totalTrades || (session.trades?.length) || 0,
+                    wins: session.wins || 0,
+                    losses: session.losses || 0,
+                    winRate: session.winRate || 0,
+                    stopReason: session.stopReason || 'manual',
+                    trades: session.trades || []
+                };
+                
+                // Salvar no Firebase
+                const docRef = await addDoc(collection(db, 'sessions'), sessionData);
+                syncedCount++;
+                console.log(`✅ Sessão ${i+1}/${localSessions.length} sincronizada: ${docRef.id}`);
+                log(`✅ Sessão ${i+1}/${localSessions.length} sincronizada`, 'success');
+                
+            } catch (error) {
+                errorCount++;
+                console.error(`❌ Erro ao sincronizar sessão ${i+1}:`, error);
+                log(`❌ Erro ao sincronizar sessão ${i+1}: ${error.message}`, 'error');
+            }
+        }
+        
+        // Resultado final
+        console.log(`🎉 Sincronização concluída! ${syncedCount} sessões enviadas, ${errorCount} erros`);
+        
+        if (errorCount === 0) {
+            log(`🎉 Todas as ${syncedCount} sessões foram sincronizadas com sucesso!`, 'success');
+            alert(
+                `✅ Sincronização Concluída!\n\n` +
+                `${syncedCount} sessões foram enviadas para o Firebase.\n\n` +
+                `Agora você pode acessar seu histórico de qualquer dispositivo!`
+            );
+            
+            // Recarregar histórico do Firebase
+            setTimeout(() => {
+                loadSessionHistory();
+            }, 1000);
+        } else {
+            log(`⚠️ Sincronização concluída com ${errorCount} erros. ${syncedCount} sessões enviadas.`, 'warning');
+            alert(
+                `⚠️ Sincronização Parcial\n\n` +
+                `${syncedCount} sessões sincronizadas com sucesso.\n` +
+                `${errorCount} sessões falharam.\n\n` +
+                `Verifique o console para detalhes.`
+            );
+        }
+        
+    } catch (error) {
+        console.error('❌ Erro na sincronização:', error);
+        log(`❌ Erro na sincronização: ${error.message}`, 'error');
+        alert(`❌ Erro ao sincronizar:\n\n${error.message}`);
+    }
+}
+
 // 🔥 EXPORTA IMEDIATAMENTE PARA ESCOPO GLOBAL
 if (typeof window !== 'undefined') {
     window.clearSessionHistory = clearSessionHistory;
+    window.syncLocalToFirebase = syncLocalToFirebase;
 }
 
 function renderSessionHistory() {
     const container = document.getElementById('sessionHistoryContainer');
+    
+    if (!container) {
+        console.warn('⚠️ Container de histórico não encontrado');
+        return;
+    }
     
     if (sessionHistory.length === 0) {
         container.innerHTML = `
@@ -975,20 +1114,31 @@ function renderSessionHistory() {
     }
     
     container.innerHTML = sessionHistory.map(session => {
-        const winRate = session.trades.length > 0 
-            ? ((session.wins / session.trades.length) * 100).toFixed(1) 
+        // ✅ Proteção contra valores undefined
+        const trades = session.trades || [];
+        const wins = session.wins || 0;
+        const losses = session.losses || 0;
+        const totalProfit = session.totalProfit || session.profit || 0;
+        const startBalance = session.startBalance || session.initialBalance || 0;
+        const endBalance = session.endBalance || session.finalBalance || 0;
+        const duration = session.duration || 0;
+        const assetsUsed = session.assetsUsed || [session.asset || 'N/A'];
+        const strategyName = session.strategyName || session.strategy || 'Desconhecida';
+        
+        const winRate = trades.length > 0 
+            ? ((wins / trades.length) * 100).toFixed(1) 
             : '0.0';
         
-        const profitClass = session.totalProfit >= 0 ? 'profit' : 'loss';
-        const profitSign = session.totalProfit >= 0 ? '+' : '';
+        const profitClass = totalProfit >= 0 ? 'profit' : 'loss';
+        const profitSign = totalProfit >= 0 ? '+' : '';
         
-        const durationMinutes = Math.floor(session.duration / 60);
-        const durationSeconds = session.duration % 60;
+        const durationMinutes = Math.floor(duration / 60);
+        const durationSeconds = duration % 60;
         const durationText = `${durationMinutes}min ${durationSeconds}s`;
         
-        const startDate = session.startTime.toLocaleDateString('pt-BR');
-        const startTime = session.startTime.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-        const endTime = session.endTime ? session.endTime.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '--';
+        const startDate = session.startTime ? new Date(session.startTime).toLocaleDateString('pt-BR') : '--';
+        const startTime = session.startTime ? new Date(session.startTime).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '--';
+        const endTime = session.endTime ? new Date(session.endTime).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '--';
         
         const accountIcon = session.accountType === 'demo' ? '🧪' : '💰';
         const accountText = session.accountType === 'demo' ? 'DEMO' : 'REAL';
@@ -999,7 +1149,7 @@ function renderSessionHistory() {
                     <div class="session-title">
                         <div class="session-icon">${accountIcon}</div>
                         <div class="session-info">
-                            <h3>${session.strategyName} (${accountText})</h3>
+                            <h3>${strategyName} (${accountText})</h3>
                             <div class="session-date">
                                 📅 ${startDate} • ⏰ ${startTime} - ${endTime}
                             </div>
@@ -1014,23 +1164,23 @@ function renderSessionHistory() {
                 <div class="session-stats">
                     <div class="session-stat">
                         <div class="session-stat-label">💰 Saldo Inicial</div>
-                        <div class="session-stat-value neutral">$${session.startBalance.toFixed(2)}</div>
+                        <div class="session-stat-value neutral">$${startBalance.toFixed(2)}</div>
                     </div>
                     <div class="session-stat">
                         <div class="session-stat-label">💵 Saldo Final</div>
-                        <div class="session-stat-value neutral">$${session.endBalance.toFixed(2)}</div>
+                        <div class="session-stat-value neutral">$${endBalance.toFixed(2)}</div>
                     </div>
                     <div class="session-stat">
                         <div class="session-stat-label">📊 Total Trades</div>
-                        <div class="session-stat-value neutral">${session.trades.length}</div>
+                        <div class="session-stat-value neutral">${trades.length}</div>
                     </div>
                     <div class="session-stat">
                         <div class="session-stat-label">🟢 Vitórias</div>
-                        <div class="session-stat-value profit">${session.wins}</div>
+                        <div class="session-stat-value profit">${wins}</div>
                     </div>
                     <div class="session-stat">
                         <div class="session-stat-label">🔴 Derrotas</div>
-                        <div class="session-stat-value loss">${session.losses}</div>
+                        <div class="session-stat-value loss">${losses}</div>
                     </div>
                     <div class="session-stat">
                         <div class="session-stat-label">🎯 Win Rate</div>
@@ -1040,7 +1190,7 @@ function renderSessionHistory() {
                 
                 <div style="margin-top: 15px;">
                     <strong>📊 Ativos Operados:</strong><br>
-                    ${session.assetsUsed.map(asset => `<span class="session-asset">${asset}</span>`).join('')}
+                    ${assetsUsed.map(asset => `<span class="session-asset">${asset}</span>`).join('')}
                 </div>
                 
                 <div class="session-result ${profitClass}">
@@ -1050,7 +1200,7 @@ function renderSessionHistory() {
                         </div>
                     </div>
                     <div class="session-result-value ${profitClass}">
-                        ${profitSign}$${Math.abs(session.totalProfit).toFixed(2)}
+                        ${profitSign}$${Math.abs(totalProfit).toFixed(2)}
                     </div>
                 </div>
             </div>
@@ -1085,23 +1235,34 @@ function updateHistorySummary() {
     let totalProfit = 0;
     
     sessionHistory.forEach(session => {
-        totalTrades += session.trades.length;
-        totalWins += session.wins;
-        totalProfit += session.totalProfit;
+        // ✅ Proteção contra valores undefined
+        const trades = session.trades || [];
+        const wins = session.wins || 0;
+        const profit = session.totalProfit || session.profit || 0;
+        
+        totalTrades += trades.length;
+        totalWins += wins;
+        totalProfit += profit;
     });
     
     const winRate = totalTrades > 0 ? ((totalWins / totalTrades) * 100).toFixed(1) : '0.0';
     const profitClass = totalProfit >= 0 ? 'profit' : 'loss';
     const profitSign = totalProfit >= 0 ? '+' : '';
     
-    // Atualizar elementos
-    document.getElementById('summaryTotalSessions').textContent = totalSessions;
-    document.getElementById('summaryTotalTrades').textContent = totalTrades;
-    document.getElementById('summaryWinRate').textContent = `${winRate}%`;
-    
+    // Atualizar elementos com proteção
+    const summaryTotalSessionsEl = document.getElementById('summaryTotalSessions');
+    const summaryTotalTradesEl = document.getElementById('summaryTotalTrades');
+    const summaryWinRateEl = document.getElementById('summaryWinRate');
     const profitEl = document.getElementById('summaryProfit');
-    profitEl.textContent = `${profitSign}$${Math.abs(totalProfit).toFixed(2)}`;
-    profitEl.className = `summary-value-large ${profitClass}`;
+    
+    if (summaryTotalSessionsEl) summaryTotalSessionsEl.textContent = totalSessions;
+    if (summaryTotalTradesEl) summaryTotalTradesEl.textContent = totalTrades;
+    if (summaryWinRateEl) summaryWinRateEl.textContent = `${winRate}%`;
+    
+    if (profitEl) {
+        profitEl.textContent = `${profitSign}$${Math.abs(totalProfit).toFixed(2)}`;
+        profitEl.className = `summary-value-large ${profitClass}`;
+    }
 }
 
 // 🆕 ═══════════════════════════════════════════════════════════════
@@ -1126,11 +1287,23 @@ function updateHistoryFilters() {
 }
 
 function applyHistoryFilters() {
-    const periodFilter = document.getElementById('periodFilter').value;
-    const strategyFilter = document.getElementById('strategyFilter').value;
-    const accountFilter = document.getElementById('accountFilter').value;
-    const startDateInput = document.getElementById('startDateFilter').value;
-    const endDateInput = document.getElementById('endDateFilter').value;
+    // ✅ Proteção contra elementos não existentes
+    const periodFilterEl = document.getElementById('periodFilter');
+    const strategyFilterEl = document.getElementById('strategyFilter');
+    const accountFilterEl = document.getElementById('accountFilter');
+    const startDateInputEl = document.getElementById('startDateFilter');
+    const endDateInputEl = document.getElementById('endDateFilter');
+    
+    if (!periodFilterEl || !strategyFilterEl || !accountFilterEl) {
+        console.warn('⚠️ Elementos de filtro não encontrados');
+        return;
+    }
+    
+    const periodFilter = periodFilterEl.value;
+    const strategyFilter = strategyFilterEl.value;
+    const accountFilter = accountFilterEl.value;
+    const startDateInput = startDateInputEl ? startDateInputEl.value : '';
+    const endDateInput = endDateInputEl ? endDateInputEl.value : '';
     
     // Filtrar sessões
     let filteredSessions = [...sessionHistory];
@@ -1141,6 +1314,7 @@ function applyHistoryFilters() {
         const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
         
         filteredSessions = filteredSessions.filter(session => {
+            if (!session.startTime) return false;
             const sessionDate = new Date(session.startTime);
             
             switch(periodFilter) {

@@ -796,9 +796,14 @@
         <div class="panel session-history-panel">
             <div class="panel-header">
                 <div class="panel-title">📜 Histórico de Sessões</div>
-                <button class="btn-clear-history" onclick="clearSessionHistory()">
-                    <span>🗑️ Limpar Histórico</span>
-                </button>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn-sync-firebase" onclick="syncLocalToFirebase()" title="Sincronizar sessões locais com Firebase">
+                        <span>🔄 Sincronizar com Firebase</span>
+                    </button>
+                    <button class="btn-clear-history" onclick="clearSessionHistory()">
+                        <span>🗑️ Limpar Histórico</span>
+                    </button>
+                </div>
             </div>
             
             <!-- 🆕 RESUMO GERAL -->

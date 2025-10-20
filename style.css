@@ -955,6 +955,27 @@ input[type="range"]::-webkit-slider-thumb {
     border-bottom: 2px solid rgba(6, 255, 165, 0.2);
 }
 
+.btn-sync-firebase {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-sync-firebase:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    background: linear-gradient(135deg, #764ba2, #667eea);
+}
+
 .btn-clear-history {
     background: linear-gradient(135deg, var(--accent-red), #c1121f);
     border: none;
