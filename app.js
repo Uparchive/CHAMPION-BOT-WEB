@@ -66,6 +66,10 @@ let maxDailyProfitPercent = 0; // Padrão: desabilitado (0 = sem limite)
 let maxDailyProfitValue = 0; // Valor fixo em USD
 let hasHitDailyLimit = false; // Flag para parar bot se atingir limite
 
+// 🆕 Valor de Entrada (Stake)
+let stakeMode = 'auto'; // 'auto' ou 'manual'
+let manualStakeValue = 1.00; // Valor manual definido pelo usuário
+
 // 🆕 Histórico de Sessões
 let currentSession = null; // Sessão atual em andamento
 let sessionHistory = []; // Array de sessões anteriores
@@ -283,10 +287,12 @@ function getActiveToken() {
 function saveConfig() {
     try {
         const config = {
-            symbol: document.getElementById('symbol').value,
             rememberToken: document.getElementById('rememberToken').checked,
             strategy: currentStrategy,
             accountType: currentAccountType,
+            // 🆕 Configurações de Stake
+            stakeMode: stakeMode,
+            manualStake: document.getElementById('manualStake')?.value || 1.00,
             // 🆕 Configurações de Stop Loss
             stopLossType: maxDailyLossType,
             stopLossPercent: document.getElementById('maxLossPercent').value,
@@ -337,12 +343,6 @@ function loadConfig() {
     try {
         const config = JSON.parse(saved);
         
-        // Carregar configurações básicas com verificação de elemento
-        const symbolEl = document.getElementById('symbol');
-        if (config.symbol && symbolEl) {
-            symbolEl.value = config.symbol;
-        }
-        
         // Campo maxLoss antigo foi removido (agora usa maxLossPercent/maxLossFixed)
         
         if (config.strategy) {
@@ -368,6 +368,20 @@ function loadConfig() {
             if (document.getElementById('accountTypeDemo')) {
                 selectAccountType(config.accountType);
             }
+        }
+        
+        // 🆕 Carregar configurações de Stake
+        if (config.stakeMode) {
+            stakeMode = config.stakeMode;
+            if (document.getElementById('stakeAutoBtn') && document.getElementById('stakeManualBtn')) {
+                toggleStakeMode(config.stakeMode);
+            }
+        }
+        
+        const manualStakeEl = document.getElementById('manualStake');
+        if (config.manualStake && manualStakeEl) {
+            manualStakeEl.value = config.manualStake;
+            manualStakeValue = parseFloat(config.manualStake);
         }
         
         // 🆕 Carregar configurações de Stop Loss (com verificações)
@@ -502,6 +516,41 @@ function toggleRiskType(riskType, type, silent = false) {
 // 🔥 EXPORTA IMEDIATAMENTE PARA ESCOPO GLOBAL
 if (typeof window !== 'undefined') {
     window.toggleRiskType = toggleRiskType;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CONTROLE DE STAKE (VALOR DE ENTRADA)
+// ═══════════════════════════════════════════════════════════════
+function toggleStakeMode(mode) {
+    // mode = 'auto' ou 'manual'
+    stakeMode = mode;
+    
+    // Atualizar botões
+    document.getElementById('stakeAutoBtn').classList.toggle('active', mode === 'auto');
+    document.getElementById('stakeManualBtn').classList.toggle('active', mode === 'manual');
+    
+    // Mostrar/ocultar descrições
+    document.getElementById('stakeAutoDesc').style.display = mode === 'auto' ? 'block' : 'none';
+    document.getElementById('stakeManualDesc').style.display = mode === 'manual' ? 'block' : 'none';
+    
+    // Mostrar/ocultar campo manual
+    document.getElementById('stakeManualGroup').style.display = mode === 'manual' ? 'block' : 'none';
+    
+    // Atualizar valor manual se necessário
+    if (mode === 'manual') {
+        const input = document.getElementById('manualStake');
+        if (input) {
+            manualStakeValue = parseFloat(input.value) || 1.00;
+        }
+    }
+    
+    const modeText = mode === 'auto' ? 'Automático (estratégia)' : `Manual ($${manualStakeValue.toFixed(2)})`;
+    log(`💰 Modo de Stake alterado: ${modeText}`, 'info');
+}
+
+// 🔥 EXPORTA PARA ESCOPO GLOBAL
+if (typeof window !== 'undefined') {
+    window.toggleStakeMode = toggleStakeMode;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -2925,22 +2974,39 @@ async function executeTrade(signal) {
         const strategy = STRATEGIES[currentStrategy];
         const symbol = document.getElementById('symbol').value;
         
-        // Calcular stake com inteligência de valor mínimo
-        let stake = (balance * (strategy.stakePercent / 100));
+        // 🆕 Calcular stake baseado no modo selecionado
+        let stake;
+        let stakeDescription;
         
-        // Se stake calculado for menor que o mínimo permitido, usa o mínimo
-        if (stake < strategy.minStake) {
-            stake = strategy.minStake;
-            log(`⚠️ Stake calculado ($${stake.toFixed(2)}) abaixo do mínimo. Usando $${strategy.minStake}`, 'warning');
+        if (stakeMode === 'manual') {
+            // Modo Manual: usa valor definido pelo usuário
+            stake = manualStakeValue;
+            stakeDescription = `Manual: $${stake.toFixed(2)}`;
+        } else {
+            // Modo Automático: usa porcentagem da estratégia
+            stake = (balance * (strategy.stakePercent / 100));
+            stakeDescription = `${strategy.stakePercent}% da banca`;
+            
+            // Se stake calculado for menor que o mínimo permitido, usa o mínimo
+            if (stake < strategy.minStake) {
+                stake = strategy.minStake;
+                log(`⚠️ Stake calculado abaixo do mínimo. Usando $${strategy.minStake}`, 'warning');
+            }
         }
         
-        stake = stake.toFixed(2);
+        // Garantir que stake não seja menor que o mínimo da Deriv
+        if (stake < 0.35) {
+            stake = 0.35;
+            log(`⚠️ Stake ajustado para o mínimo permitido: $0.35`, 'warning');
+        }
+        
+        stake = parseFloat(stake.toFixed(2));
 
         log(``, 'info');
         log(`💼 ═══════════ EXECUTANDO TRADE ═══════════`, 'trade');
         log(`💼 Ativo: ${symbol}`, 'trade');
         log(`💼 Direção: ${signal.direction}`, 'trade');
-        log(`💼 Stake: $${stake} (${strategy.stakePercent}% da banca)`, 'trade');
+        log(`💼 Stake: $${stake} (${stakeDescription})`, 'trade');
         log(`💼 Confiança: ${(signal.confidence * 100).toFixed(0)}%`, 'trade');
 
         // Salvar lucro anterior para comparação
@@ -3208,6 +3274,18 @@ window.addEventListener('beforeunload', (event) => {
 window.onload = () => {
     loadConfig();
     loadSessionHistory(); // 🆕 Carregar histórico de sessões
+    
+    // 🆕 Adicionar listener para atualizar stake manual em tempo real
+    const manualStakeInput = document.getElementById('manualStake');
+    if (manualStakeInput) {
+        manualStakeInput.addEventListener('input', function() {
+            const value = parseFloat(this.value) || 1.00;
+            if (value >= 0.35) {
+                manualStakeValue = value;
+            }
+        });
+    }
+    
     log('🚀 Champion Bot Web v2.0 carregado!', 'info');
     log('💡 Clique em Configurações para começar', 'info');
 };

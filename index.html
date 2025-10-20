@@ -593,21 +593,33 @@
                 <!-- Gestão de Risco -->
                 <div class="config-section">
                     <h3>🛡️ Gestão de Risco</h3>
-                    <div class="form-group">
-                        <label for="symbol">📊 Ativo Principal</label>
-                        <select id="symbol">
-                            <option value="R_10">Volatility 10 Index</option>
-                            <option value="R_25">Volatility 25 Index</option>
-                            <option value="R_50">Volatility 50 Index</option>
-                            <option value="R_75">Volatility 75 Index</option>
-                            <option value="R_100">Volatility 100 Index</option>
-                            <option value="1HZ10V">Volatility 10 (1s) Index</option>
-                            <option value="1HZ25V">Volatility 25 (1s) Index</option>
-                            <option value="1HZ50V">Volatility 50 (1s) Index</option>
-                            <option value="1HZ75V">Volatility 75 (1s) Index</option>
-                            <option value="1HZ100V">Volatility 100 (1s) Index</option>
-                        </select>
+                    
+                    <!-- 💰 VALOR DE ENTRADA -->
+                    <div class="risk-control-group">
+                        <div class="risk-header">
+                            <label>� Valor de Cada Entrada (Stake)</label>
+                            <div class="risk-type-toggle">
+                                <button class="risk-toggle-btn active" id="stakeAutoBtn" onclick="toggleStakeMode('auto')">Automático</button>
+                                <button class="risk-toggle-btn" id="stakeManualBtn" onclick="toggleStakeMode('manual')">Manual</button>
+                            </div>
+                        </div>
+                        <div class="risk-description" id="stakeAutoDesc">
+                            ✅ Bot usa o valor recomendado pela estratégia selecionada
+                        </div>
+                        <div class="risk-description" id="stakeManualDesc" style="display: none;">
+                            ✏️ Você define um valor fixo para todas as entradas
+                        </div>
+                        
+                        <!-- Campo Manual -->
+                        <div class="form-group" id="stakeManualGroup" style="display: none;">
+                            <label for="manualStake">Valor por entrada (USD):</label>
+                            <input type="number" id="manualStake" min="0.35" max="10000" step="0.01" value="1.00">
+                            <small style="color: #06ffa5;">💡 Mínimo: $0.35 | Recomendado: 1-2% da banca</small>
+                        </div>
                     </div>
+                    
+                    <!-- Campo hidden para compatibilidade com rotação de ativos -->
+                    <input type="hidden" id="symbol" value="R_10">
                     
                     <!-- 🆕 STOP LOSS DIÁRIO -->
                     <div class="risk-control-group">
