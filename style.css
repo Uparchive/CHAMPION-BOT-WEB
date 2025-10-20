@@ -320,6 +320,218 @@ body {
     font-size: 14px;
     color: var(--accent-green);
     font-weight: bold;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.strategy-stats span {
+    font-size: 12px;
+}
+
+/* 💎 Estilo para Estratégia Premium (Diamond Hands) */
+.premium-strategy {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.1));
+    border: 2px solid rgba(168, 85, 247, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.premium-strategy::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
+.premium-strategy:hover {
+    border-color: rgba(168, 85, 247, 0.8);
+    box-shadow: 0 10px 40px rgba(168, 85, 247, 0.4);
+}
+
+.premium-strategy .strategy-icon {
+    font-size: 56px;
+    filter: drop-shadow(0 0 15px rgba(168, 85, 247, 0.6));
+}
+
+.premium-strategy h4 {
+    color: #a855f7 !important;
+    font-size: 20px;
+}
+
+.premium-strategy .strategy-stats {
+    background: rgba(168, 85, 247, 0.1);
+    border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+/* Badge "RECOMENDADO" no topo */
+.strategy-badge-top {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: linear-gradient(135deg, #6366f1, #a855f7);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+    box-shadow: 0 4px 15px rgba(168, 85, 247, 0.6);
+    animation: pulse 2s infinite;
+    z-index: 10;
+}
+
+.strategy-badge { /* Badge antigo */
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: linear-gradient(135deg, #6366f1, #a855f7);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+    box-shadow: 0 4px 15px rgba(168, 85, 247, 0.6);
+    animation: pulse 2s infinite;
+    z-index: 10;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.05); opacity: 0.9; }
+}
+
+/* ⚡ Variante amarelo/laranja para Flash Scalper */
+.strategy-card[data-strategy="flash"] {
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(245, 158, 11, 0.1));
+    border: 2px solid rgba(251, 191, 36, 0.3);
+}
+
+.strategy-card[data-strategy="flash"]::before {
+    background: linear-gradient(90deg, transparent, rgba(251, 191, 36, 0.1), transparent);
+}
+
+.strategy-card[data-strategy="flash"]:hover {
+    border-color: rgba(251, 191, 36, 0.8);
+    box-shadow: 0 10px 40px rgba(251, 191, 36, 0.4);
+}
+
+.strategy-card[data-strategy="flash"] .strategy-icon {
+    font-size: 56px;
+    filter: drop-shadow(0 0 15px rgba(251, 191, 36, 0.6));
+}
+
+.strategy-card[data-strategy="flash"] h4 {
+    color: #fbbf24 !important;
+    font-size: 20px;
+}
+
+.strategy-card[data-strategy="flash"] .strategy-stats {
+    background: rgba(251, 191, 36, 0.1);
+    border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+.strategy-card[data-strategy="flash"] .strategy-badge-top {
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    box-shadow: 0 4px 15px rgba(251, 191, 36, 0.6);
+}
+
+/* 🔍 FILTRO DE PESQUISA DE ESTRATÉGIAS */
+.strategy-search-container {
+    margin-bottom: 25px;
+}
+
+.search-box {
+    position: relative;
+    margin-bottom: 15px;
+}
+
+.search-icon {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 18px;
+    pointer-events: none;
+}
+
+.search-box input {
+    width: 100%;
+    padding: 12px 15px 12px 45px;
+    background: var(--bg-primary);
+    border: 2px solid rgba(6, 255, 165, 0.2);
+    border-radius: 25px;
+    color: var(--text-primary);
+    font-size: 14px;
+    transition: all 0.3s;
+}
+
+.search-box input:focus {
+    outline: none;
+    border-color: var(--accent-cyan);
+    box-shadow: 0 0 20px rgba(6, 255, 165, 0.3);
+}
+
+.search-box input::placeholder {
+    color: var(--text-secondary);
+}
+
+/* Filtros por tipo */
+.strategy-filters {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.filter-btn {
+    padding: 8px 16px;
+    background: var(--bg-primary);
+    border: 2px solid rgba(6, 255, 165, 0.2);
+    border-radius: 20px;
+    color: var(--text-primary);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.filter-btn:hover {
+    border-color: var(--accent-cyan);
+    background: rgba(6, 255, 165, 0.1);
+}
+
+.filter-btn.active {
+    background: var(--accent-cyan);
+    color: var(--bg-primary);
+    border-color: var(--accent-cyan);
+    box-shadow: 0 0 15px rgba(6, 255, 165, 0.4);
+}
+
+/* Contador de estratégias */
+.strategy-count {
+    text-align: center;
+    margin-top: 20px;
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.strategy-count strong {
+    color: var(--accent-cyan);
+}
+
+/* Estratégia oculta pelo filtro */
+.strategy-card.hidden {
+    display: none !important;
 }
 
 .modal-footer {

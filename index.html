@@ -521,75 +521,6 @@
                     </div>
                 </div>
 
-                <!-- Catálogo de Estratégias -->
-                <div class="config-section">
-                    <h3>📊 Escolha sua Estratégia</h3>
-                    <div class="strategies-grid">
-                        <!-- Champion Strategy -->
-                        <div class="strategy-card active" data-strategy="champion" onclick="selectStrategy('champion')">
-                            <div class="strategy-icon">🏆</div>
-                            <h4>Champion Pro</h4>
-                            <p>⚖️ BALANCEADO - Score 2/4 pontos. Análise técnica completa. Win rate 65-70%. 30 trades/dia.</p>
-                            <div class="strategy-stats">
-                                <span>💰 Stake: 1.5% da banca</span>
-                                <span>⚖️ Equilibrado</span>
-                            </div>
-                        </div>
-
-                        <!-- Martingale Strategy -->
-                        <div class="strategy-card" data-strategy="martingale" onclick="selectStrategy('martingale')">
-                            <div class="strategy-icon">📈</div>
-                            <h4>Martingale Seguro</h4>
-                            <p>Dobra após loss com limite de 3 gales. RSI extremos + Volume.</p>
-                            <div class="strategy-stats">
-                                <span>💰 Stake: 1% inicial</span>
-                            </div>
-                        </div>
-
-                        <!-- Scalper Strategy - 🆕 OTIMIZADO -->
-                        <div class="strategy-card" data-strategy="scalper" onclick="selectStrategy('scalper')">
-                            <div class="strategy-icon">⚡</div>
-                            <h4>Scalper Pro Ultra</h4>
-                            <p>⚡ AGRESSIVO - Score 2/4 pontos. Muitos trades rápidos. Win rate 60-65%. 80 trades/dia. 1min cooldown.</p>
-                            <div class="strategy-stats">
-                                <span>💰 Stake: 1% da banca</span>
-                                <span>⚡ Muito rápido</span>
-                            </div>
-                        </div>
-
-                        <!-- Bollinger Strategy -->
-                        <div class="strategy-card" data-strategy="bollinger" onclick="selectStrategy('bollinger')">
-                            <div class="strategy-icon">🎯</div>
-                            <h4>Bollinger Bands</h4>
-                            <p>Opera nos extremos das bandas. Alta precisão em lateralização.</p>
-                            <div class="strategy-stats">
-                                <span>💰 Stake: 2.5% da banca</span>
-                            </div>
-                        </div>
-
-                        <!-- Triple Check Strategy -->
-                        <div class="strategy-card" data-strategy="triple" onclick="selectStrategy('triple')">
-                            <div class="strategy-icon">🔒</div>
-                            <h4>Triple Check</h4>
-                            <p>🛡️ CONSERVADOR - Score 3/4 + bonus. Ultra seguro, múltiplos filtros. Win rate 70-75%. 15 trades/dia.</p>
-                            <div class="strategy-stats">
-                                <span>💰 Stake: 2% da banca</span>
-                                <span>🛡️ Ultra seguro</span>
-                            </div>
-                        </div>
-
-                        <!-- Trend Rider Strategy -->
-                        <div class="strategy-card" data-strategy="trend" onclick="selectStrategy('trend')">
-                            <div class="strategy-icon">🌊</div>
-                            <h4>Trend Rider</h4>
-                            <p>Surfa tendências longas. SMA(50/200) + ADX forte.</p>
-                            <div class="strategy-stats">
-                                <span>💰 Stake: 2% da banca</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Gestão de Risco -->
                 <div class="config-section">
                     <h3>🛡️ Gestão de Risco</h3>
@@ -723,6 +654,123 @@
                                    autocomplete="new-password">
                             <small class="risk-hint">💡 Será solicitada ao tentar limpar o histórico</small>
                         </div>
+                    </div>
+                </div>
+
+                <!-- 📊 CATÁLOGO DE ESTRATÉGIAS (COM FILTRO) -->
+                <div class="config-section">
+                    <h3>📊 Catálogo de Estratégias</h3>
+                    
+                    <!-- Filtro de Pesquisa -->
+                    <div class="strategy-search-container">
+                        <div class="search-box">
+                            <span class="search-icon">🔍</span>
+                            <input type="text" id="strategySearchInput" placeholder="Pesquisar estratégia..." onkeyup="filterStrategies()">
+                        </div>
+                        <div class="strategy-filters">
+                            <button class="filter-btn active" onclick="filterByType('all')">Todas</button>
+                            <button class="filter-btn" onclick="filterByType('conservative')">🛡️ Conservadoras</button>
+                            <button class="filter-btn" onclick="filterByType('balanced')">⚖️ Balanceadas</button>
+                            <button class="filter-btn" onclick="filterByType('aggressive')">⚡ Agressivas</button>
+                        </div>
+                    </div>
+
+                    <!-- Grid de Estratégias -->
+                    <div class="strategies-grid" id="strategiesGrid">
+                        <!-- 💎 Diamond Hands Strategy (DESTAQUE) -->
+                        <div class="strategy-card premium-strategy" data-strategy="diamond" data-type="conservative" onclick="selectStrategy('diamond')">
+                            <div class="strategy-badge-top">RECOMENDADO</div>
+                            <div class="strategy-icon">💎</div>
+                            <h4>Diamond Hands 💎</h4>
+                            <p>🏆 ULTRA CONSERVADOR - Win rate 85-95%. Score 4/4 + múltiplos filtros.</p>
+                            <div class="strategy-stats">
+                                <span>✨ Win Rate: 85-95%</span>
+                                <span>💰 Stake: 0.5% da banca</span>
+                                <span>📊 Trades: 5-8/dia</span>
+                                <span>⏱️ Cooldown: 10min</span>
+                            </div>
+                        </div>
+
+                        <!-- Triple Check Strategy -->
+                        <div class="strategy-card" data-strategy="triple" data-type="conservative" onclick="selectStrategy('triple')">
+                            <div class="strategy-icon">🔒</div>
+                            <h4>Triple Check</h4>
+                            <p>🛡️ CONSERVADOR - Score 3/4 + bonus. Ultra seguro, múltiplos filtros. Win rate 70-75%. 15 trades/dia.</p>
+                            <div class="strategy-stats">
+                                <span>💰 Stake: 2% da banca</span>
+                                <span>🛡️ Ultra seguro</span>
+                            </div>
+                        </div>
+
+                        <!-- Champion Strategy -->
+                        <div class="strategy-card active" data-strategy="champion" data-type="balanced" onclick="selectStrategy('champion')">
+                            <div class="strategy-icon">🏆</div>
+                            <h4>Champion Pro</h4>
+                            <p>⚖️ BALANCEADO - Score 2/4 pontos. Análise técnica completa. Win rate 65-70%. 30 trades/dia.</p>
+                            <div class="strategy-stats">
+                                <span>💰 Stake: 1.5% da banca</span>
+                                <span>⚖️ Equilibrado</span>
+                            </div>
+                        </div>
+
+                        <!-- Bollinger Strategy -->
+                        <div class="strategy-card" data-strategy="bollinger" data-type="balanced" onclick="selectStrategy('bollinger')">
+                            <div class="strategy-icon">🎯</div>
+                            <h4>Bollinger Bands</h4>
+                            <p>Opera nos extremos das bandas. Alta precisão em lateralização.</p>
+                            <div class="strategy-stats">
+                                <span>💰 Stake: 2.5% da banca</span>
+                            </div>
+                        </div>
+
+                        <!-- Trend Rider Strategy -->
+                        <div class="strategy-card" data-strategy="trend" data-type="balanced" onclick="selectStrategy('trend')">
+                            <div class="strategy-icon">🌊</div>
+                            <h4>Trend Rider</h4>
+                            <p>Surfa tendências longas. SMA(50/200) + ADX forte.</p>
+                            <div class="strategy-stats">
+                                <span>💰 Stake: 2% da banca</span>
+                            </div>
+                        </div>
+
+                        <!-- Scalper Strategy -->
+                        <div class="strategy-card" data-strategy="scalper" data-type="aggressive" onclick="selectStrategy('scalper')">
+                            <div class="strategy-icon">⚡</div>
+                            <h4>Scalper Pro Ultra</h4>
+                            <p>⚡ AGRESSIVO - Score 2/4 pontos. Muitos trades rápidos. Win rate 60-65%. 80 trades/dia. 1min cooldown.</p>
+                            <div class="strategy-stats">
+                                <span>💰 Stake: 1% da banca</span>
+                                <span>⚡ Muito rápido</span>
+                            </div>
+                        </div>
+
+                        <!-- Martingale Strategy -->
+                        <div class="strategy-card" data-strategy="martingale" data-type="aggressive" onclick="selectStrategy('martingale')">
+                            <div class="strategy-icon">📈</div>
+                            <h4>Martingale Seguro</h4>
+                            <p>Dobra após loss com limite de 3 gales. RSI extremos + Volume.</p>
+                            <div class="strategy-stats">
+                                <span>💰 Stake: 1% inicial</span>
+                            </div>
+                        </div>
+
+                        <!-- ⚡ Flash Scalper Strategy (NOVA - ULTRA RÁPIDA) -->
+                        <div class="strategy-card premium-strategy" data-strategy="flash" data-type="aggressive" onclick="selectStrategy('flash')">
+                            <div class="strategy-badge-top">NOVO</div>
+                            <div class="strategy-icon">⚡</div>
+                            <h4>Flash Scalper ⚡</h4>
+                            <p>⚡ ULTRA RÁPIDO - Win rate 75-85%. Opera a cada 1 MINUTO com métricas precisas!</p>
+                            <div class="strategy-stats">
+                                <span>✨ Win Rate: 75-85%</span>
+                                <span>💰 Stake: 0.8% da banca</span>
+                                <span>📊 Trades: 100-150/dia</span>
+                                <span>⏱️ Cooldown: 1min ⚡</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="strategy-count" id="strategyCount">
+                        Mostrando <strong>8</strong> estratégias
                     </div>
                 </div>
 
@@ -927,6 +975,9 @@
         </div>
     </div>
 
+    <!-- 🎯 Carregar Strategy Manager ANTES do app.js -->
+    <script type="module" src="strategy-manager.js"></script>
+    
     <script type="module" src="app.js"></script>
     
     <!-- Script para inicializar sliders -->

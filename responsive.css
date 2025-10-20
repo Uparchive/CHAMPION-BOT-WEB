@@ -694,5 +694,52 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
+   FILTRO DE ESTRATÉGIAS - MOBILE
+   ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 480px) {
+    .strategy-search-container {
+        margin-bottom: 20px;
+    }
+    
+    .search-box input {
+        font-size: 16px; /* Evita zoom no iOS */
+        padding: 14px 15px 14px 45px;
+    }
+    
+    .strategy-filters {
+        gap: 8px;
+    }
+    
+    .filter-btn {
+        flex: 1;
+        min-width: 45%;
+        padding: 10px 12px;
+        font-size: 12px;
+    }
+    
+    .strategy-badge-top {
+        top: 5px;
+        right: 5px;
+        padding: 4px 12px;
+        font-size: 10px;
+    }
+    
+    .strategy-count {
+        font-size: 13px;
+        margin-top: 15px;
+    }
+}
+
+@media (max-width: 768px) {
+    .strategy-filters {
+        justify-content: center;
+    }
+    
+    .filter-btn {
+        font-size: 12px;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════
    FIM - Responsividade Completa
    ═══════════════════════════════════════════════════════════════ */

@@ -162,10 +162,37 @@ const STRATEGIES = {
         stakePercent: 2,
         minStake: 0.35,
         description: 'Surfa tendências longas'
-    }
+    },
+    // 💎 Estratégias externas modulares serão carregadas dinamicamente
+    diamond: null, // Placeholder - carregada do strategy-manager.js
+    flash: null    // Placeholder - Flash Scalper
 };
 
 let currentStrategy = 'champion';
+
+// 🔥 Carregar estratégias externas após inicialização
+async function loadExternalStrategies() {
+    try {
+        // Aguardar strategy-manager estar disponível
+        if (typeof window.getStrategy === 'function') {
+            // Diamond Hands
+            const diamondStrategy = window.getStrategy('diamond');
+            if (diamondStrategy) {
+                STRATEGIES.diamond = diamondStrategy;
+                console.log('💎 Estratégia Diamond Hands carregada com sucesso!');
+            }
+            
+            // Flash Scalper
+            const flashStrategy = window.getStrategy('flash');
+            if (flashStrategy) {
+                STRATEGIES.flash = flashStrategy;
+                console.log('⚡ Estratégia Flash Scalper carregada com sucesso!');
+            }
+        }
+    } catch (error) {
+        console.error('⚠️ Erro ao carregar estratégias externas:', error);
+    }
+}
 
 // ═══════════════════════════════════════════════════════════════
 // MODAL DE CONFIGURAÇÕES
@@ -208,6 +235,75 @@ function selectStrategy(strategyId) {
 // 🔥 EXPORTA IMEDIATAMENTE PARA ESCOPO GLOBAL
 if (typeof window !== 'undefined') {
     window.selectStrategy = selectStrategy;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 🔍 FILTRO DE ESTRATÉGIAS
+// ═══════════════════════════════════════════════════════════════
+function filterStrategies() {
+    const searchInput = document.getElementById('strategySearchInput');
+    const filter = searchInput.value.toLowerCase();
+    const cards = document.querySelectorAll('#strategiesGrid .strategy-card');
+    let visibleCount = 0;
+    
+    cards.forEach(card => {
+        const title = card.querySelector('h4').textContent.toLowerCase();
+        const description = card.querySelector('p').textContent.toLowerCase();
+        const isVisible = title.includes(filter) || description.includes(filter);
+        
+        if (isVisible) {
+            card.classList.remove('hidden');
+            visibleCount++;
+        } else {
+            card.classList.add('hidden');
+        }
+    });
+    
+    updateStrategyCount(visibleCount);
+}
+
+function filterByType(type) {
+    // Atualizar botões de filtro
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    
+    const cards = document.querySelectorAll('#strategiesGrid .strategy-card');
+    let visibleCount = 0;
+    
+    cards.forEach(card => {
+        const cardType = card.getAttribute('data-type');
+        
+        if (type === 'all' || cardType === type) {
+            card.classList.remove('hidden');
+            visibleCount++;
+        } else {
+            card.classList.add('hidden');
+        }
+    });
+    
+    // Limpar pesquisa
+    const searchInput = document.getElementById('strategySearchInput');
+    if (searchInput) {
+        searchInput.value = '';
+    }
+    
+    updateStrategyCount(visibleCount);
+}
+
+function updateStrategyCount(count) {
+    const countEl = document.getElementById('strategyCount');
+    if (countEl) {
+        countEl.innerHTML = `Mostrando <strong>${count}</strong> estratégia${count !== 1 ? 's' : ''}`;
+    }
+}
+
+// 🔥 EXPORTA PARA ESCOPO GLOBAL
+if (typeof window !== 'undefined') {
+    window.filterStrategies = filterStrategies;
+    window.filterByType = filterByType;
+    window.updateStrategyCount = updateStrategyCount;
 }
 
 function saveAndClose() {
@@ -3285,6 +3381,11 @@ window.onload = () => {
             }
         });
     }
+    
+    // 💎 Carregar estratégias externas
+    setTimeout(() => {
+        loadExternalStrategies();
+    }, 500);
     
     log('🚀 Champion Bot Web v2.0 carregado!', 'info');
     log('💡 Clique em Configurações para começar', 'info');
