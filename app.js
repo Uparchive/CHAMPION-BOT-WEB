@@ -48,6 +48,10 @@ let analysisThrottle = 5000; // Mínimo 5 segundos entre análises (evitar spam)
 // Gerenciamento de contas Demo/Real
 let currentAccountType = 'demo'; // 'demo' ou 'real'
 let apiTokenDemo = '';
+
+// Sistema anti-duplicação de logs
+const logHistory = new Map(); // Armazena {mensagem: timestamp}
+const LOG_DEBOUNCE_TIME = 3000; // 3 segundos de intervalo mínimo para mesma mensagem
 let apiTokenReal = '';
 
 // 🆕 Senha de Segurança para Limpar Histórico
@@ -503,6 +507,37 @@ function toggleRiskType(riskType, type, silent = false) {
 // 🔥 EXPORTA IMEDIATAMENTE PARA ESCOPO GLOBAL
 if (typeof window !== 'undefined') {
     window.toggleRiskType = toggleRiskType;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ATUALIZAR VALOR DO SLIDER EM TEMPO REAL
+// ═══════════════════════════════════════════════════════════════
+function updateRangeValue(inputId, displayId, suffix = '') {
+    const input = document.getElementById(inputId);
+    const display = document.getElementById(displayId);
+    
+    if (!input || !display) {
+        console.warn(`⚠️ Elementos não encontrados: ${inputId} ou ${displayId}`);
+        return;
+    }
+    
+    const value = input.value;
+    display.textContent = value;
+    
+    // Atualizar cor do slider baseado no valor
+    const min = parseFloat(input.min) || 0;
+    const max = parseFloat(input.max) || 100;
+    const percentage = ((value - min) / (max - min)) * 100;
+    
+    // Atualizar gradiente do slider
+    input.style.background = `linear-gradient(to right, #06ffa5 0%, #06ffa5 ${percentage}%, rgba(255,255,255,0.1) ${percentage}%, rgba(255,255,255,0.1) 100%)`;
+    
+    console.log(`📊 Slider ${inputId} atualizado: ${value}${suffix}`);
+}
+
+// 🔥 EXPORTA PARA ESCOPO GLOBAL
+if (typeof window !== 'undefined') {
+    window.updateRangeValue = updateRangeValue;
 }
 
 function checkDailyLimits() {
@@ -2052,6 +2087,25 @@ function updateStats() {
 }
 
 function log(message, type = 'info') {
+    // 🛡️ Sistema anti-duplicação de logs
+    const now = Date.now();
+    const lastLogTime = logHistory.get(message);
+    
+    // Se a mesma mensagem foi enviada há menos de 3 segundos, ignora
+    if (lastLogTime && (now - lastLogTime) < LOG_DEBOUNCE_TIME) {
+        return;
+    }
+    
+    // Atualiza o timestamp da mensagem
+    logHistory.set(message, now);
+    
+    // Limpa entradas antigas do Map (mais de 10 segundos)
+    for (const [msg, timestamp] of logHistory.entries()) {
+        if (now - timestamp > 10000) {
+            logHistory.delete(msg);
+        }
+    }
+    
     const container = document.getElementById('logContainer');
     const entry = document.createElement('div');
     entry.className = `log-entry ${type}`;

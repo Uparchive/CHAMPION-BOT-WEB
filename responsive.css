@@ -345,6 +345,91 @@
         background: rgba(255,255,255,0.3) !important;
         border-radius: 2px !important;
     }
+    
+    /* ═══════════════════════════════════════════════════════════
+       SLIDERS MOBILE - Configurações de Risco
+       ═══════════════════════════════════════════════════════════ */
+    
+    .risk-control-group {
+        padding: 15px !important;
+        margin: 15px 0 !important;
+    }
+    
+    .risk-header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 10px !important;
+    }
+    
+    .risk-header label {
+        font-size: 14px !important;
+    }
+    
+    .risk-type-toggle {
+        width: 100% !important;
+        justify-content: center !important;
+    }
+    
+    .risk-toggle-btn {
+        flex: 1 !important;
+        padding: 10px 12px !important;
+        font-size: 14px !important;
+    }
+    
+    .risk-description {
+        font-size: 12px !important;
+        padding: 8px !important;
+    }
+    
+    .slider-label-container {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 8px !important;
+    }
+    
+    .slider-value-display {
+        width: 100% !important;
+        text-align: center !important;
+        font-size: 18px !important;
+        padding: 10px !important;
+    }
+    
+    .slider-value-display .range-value {
+        font-size: 24px !important;
+    }
+    
+    .custom-slider {
+        height: 10px !important;
+    }
+    
+    .custom-slider::-webkit-slider-thumb {
+        width: 28px !important;
+        height: 28px !important;
+    }
+    
+    .custom-slider::-moz-range-thumb {
+        width: 28px !important;
+        height: 28px !important;
+    }
+    
+    .slider-markers {
+        font-size: 10px !important;
+        margin-top: 6px !important;
+    }
+    
+    .slider-markers span {
+        font-size: 10px !important;
+    }
+    
+    .risk-hint {
+        font-size: 11px !important;
+        margin-top: 10px !important;
+    }
+    
+    .form-group input[type="number"] {
+        padding: 12px !important;
+        font-size: 16px !important;
+    }
 }
 
 /* ═══════════════════════════════════════════════════════════════

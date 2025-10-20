@@ -622,12 +622,23 @@
                         
                         <!-- Campo de Porcentagem -->
                         <div class="form-group" id="stopLossPercentGroup">
-                            <label for="maxLossPercent">
-                                Perda Máxima: <span class="range-value" id="maxLossPercentValue">10</span>% da banca inicial
-                            </label>
-                            <input type="range" id="maxLossPercent" min="5" max="30" value="10" step="1" 
-                                   oninput="updateRangeValue('maxLossPercent', 'maxLossPercentValue', '%')">
-                            <small class="risk-hint">💡 Exemplo: Se iniciar com $100, bot para ao perder $10</small>
+                            <div class="slider-label-container">
+                                <label for="maxLossPercent">Perda Máxima:</label>
+                                <span class="slider-value-display">
+                                    <span class="range-value" id="maxLossPercentValue">10</span>% da banca inicial
+                                </span>
+                            </div>
+                            <div class="slider-container">
+                                <input type="range" id="maxLossPercent" class="custom-slider" min="5" max="30" value="10" step="1" 
+                                       oninput="updateRangeValue('maxLossPercent', 'maxLossPercentValue', '%')"
+                                       onload="updateRangeValue('maxLossPercent', 'maxLossPercentValue', '%')">
+                                <div class="slider-markers">
+                                    <span>5%</span>
+                                    <span>15%</span>
+                                    <span>30%</span>
+                                </div>
+                            </div>
+                            <small class="risk-hint">💡 Exemplo: Se iniciar com $100, bot para ao perder $<span id="stopLossExample">10</span></small>
                         </div>
                         
                         <!-- Campo de Valor Fixo -->
@@ -654,11 +665,22 @@
                         
                         <!-- Campo de Porcentagem -->
                         <div class="form-group" id="takeProfitPercentGroup">
-                            <label for="maxProfitPercent">
-                                Ganho Máximo: <span class="range-value" id="maxProfitPercentValue">0</span>% da banca inicial
-                            </label>
-                            <input type="range" id="maxProfitPercent" min="0" max="50" value="0" step="5" 
-                                   oninput="updateRangeValue('maxProfitPercent', 'maxProfitPercentValue', '%')">
+                            <div class="slider-label-container">
+                                <label for="maxProfitPercent">Ganho Máximo:</label>
+                                <span class="slider-value-display">
+                                    <span class="range-value" id="maxProfitPercentValue">0</span>% da banca inicial
+                                </span>
+                            </div>
+                            <div class="slider-container">
+                                <input type="range" id="maxProfitPercent" class="custom-slider" min="0" max="50" value="0" step="5" 
+                                       oninput="updateRangeValue('maxProfitPercent', 'maxProfitPercentValue', '%')"
+                                       onload="updateRangeValue('maxProfitPercent', 'maxProfitPercentValue', '%')">
+                                <div class="slider-markers">
+                                    <span>0%</span>
+                                    <span>25%</span>
+                                    <span>50%</span>
+                                </div>
+                            </div>
                             <small class="risk-hint">💡 0% = Sem limite (bot continua operando)</small>
                         </div>
                         
@@ -892,5 +914,30 @@
     </div>
 
     <script type="module" src="app.js"></script>
+    
+    <!-- Script para inicializar sliders -->
+    <script>
+        // Inicializar sliders quando a página carregar
+        window.addEventListener('DOMContentLoaded', function() {
+            // Aguardar um pouco para garantir que as funções estão carregadas
+            setTimeout(function() {
+                if (typeof window.updateRangeValue === 'function') {
+                    // Inicializar Stop Loss slider
+                    const maxLossPercent = document.getElementById('maxLossPercent');
+                    if (maxLossPercent) {
+                        window.updateRangeValue('maxLossPercent', 'maxLossPercentValue', '%');
+                    }
+                    
+                    // Inicializar Take Profit slider
+                    const maxProfitPercent = document.getElementById('maxProfitPercent');
+                    if (maxProfitPercent) {
+                        window.updateRangeValue('maxProfitPercent', 'maxProfitPercentValue', '%');
+                    }
+                    
+                    console.log('✅ Sliders inicializados');
+                }
+            }, 500);
+        });
+    </script>
 </body>
 </html>

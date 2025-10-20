@@ -697,6 +697,123 @@ input[type="range"]::-webkit-slider-thumb {
     font-style: italic;
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   SLIDERS CUSTOMIZADOS
+   ═══════════════════════════════════════════════════════════════ */
+
+.slider-label-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.slider-label-container label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.slider-value-display {
+    font-size: 16px;
+    font-weight: bold;
+    color: var(--accent-cyan);
+    padding: 5px 15px;
+    background: rgba(6, 255, 165, 0.1);
+    border-radius: 20px;
+    border: 2px solid rgba(6, 255, 165, 0.3);
+}
+
+.slider-value-display .range-value {
+    font-size: 20px;
+    color: var(--accent-green);
+}
+
+.slider-container {
+    margin: 15px 0;
+}
+
+.custom-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 8px;
+    border-radius: 5px;
+    background: linear-gradient(to right, #06ffa5 0%, #06ffa5 33%, rgba(255,255,255,0.1) 33%, rgba(255,255,255,0.1) 100%);
+    outline: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.custom-slider:hover {
+    box-shadow: 0 0 15px rgba(6, 255, 165, 0.4);
+}
+
+/* Chrome, Safari, Opera */
+.custom-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent-cyan), var(--accent-green));
+    cursor: pointer;
+    box-shadow: 0 0 20px rgba(6, 255, 165, 0.6);
+    transition: all 0.3s ease;
+}
+
+.custom-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    box-shadow: 0 0 30px rgba(6, 255, 165, 0.8);
+}
+
+.custom-slider::-webkit-slider-thumb:active {
+    transform: scale(1.1);
+}
+
+/* Firefox */
+.custom-slider::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent-cyan), var(--accent-green));
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 0 20px rgba(6, 255, 165, 0.6);
+    transition: all 0.3s ease;
+}
+
+.custom-slider::-moz-range-thumb:hover {
+    transform: scale(1.2);
+    box-shadow: 0 0 30px rgba(6, 255, 165, 0.8);
+}
+
+.custom-slider::-moz-range-thumb:active {
+    transform: scale(1.1);
+}
+
+/* Trilha do Firefox */
+.custom-slider::-moz-range-track {
+    height: 8px;
+    border-radius: 5px;
+    background: rgba(255,255,255,0.1);
+}
+
+.slider-markers {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    padding: 0 5px;
+}
+
+.slider-markers span {
+    font-size: 11px;
+    color: var(--text-secondary);
+    opacity: 0.7;
+}
+
 .form-group input[type="number"] {
     width: 100%;
     padding: 12px 15px;
