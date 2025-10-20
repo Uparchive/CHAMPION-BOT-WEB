@@ -470,11 +470,6 @@ if (typeof window !== 'undefined') {
     window.clearToken = clearToken;
 }
 
-function updateRangeValue(rangeId, valueId, suffix = '') {
-    const value = document.getElementById(rangeId).value;
-    document.getElementById(valueId).textContent = value + suffix;
-}
-
 // ═══════════════════════════════════════════════════════════════
 // CONTROLE DE RISCO (STOP LOSS / TAKE PROFIT)
 // ═══════════════════════════════════════════════════════════════

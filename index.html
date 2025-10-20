@@ -43,15 +43,17 @@
             displayUserInfo(session);
             
             // 🔥 CARREGAR HISTÓRICO APÓS AUTENTICAÇÃO
-            // Aguarda um pouco para garantir que o app.js foi carregado
+            // Aguarda 2 segundos para garantir que o app.js foi totalmente carregado
             setTimeout(() => {
-                if (typeof window.loadSessionHistory === 'function') {
-                    console.log('🔥 Carregando histórico do Firebase...');
-                    window.loadSessionHistory();
-                } else {
-                    console.warn('⚠️ loadSessionHistory não disponível ainda');
+                try {
+                    if (typeof window.loadSessionHistory === 'function') {
+                        console.log('🔥 Carregando histórico do Firebase...');
+                        window.loadSessionHistory();
+                    }
+                } catch (error) {
+                    console.error('Erro ao carregar histórico:', error);
                 }
-            }, 1000);
+            }, 2000);
         });
 
         function displayUserInfo(session) {
@@ -918,25 +920,27 @@
     <!-- Script para inicializar sliders -->
     <script>
         // Inicializar sliders quando a página carregar
-        window.addEventListener('DOMContentLoaded', function() {
-            // Aguardar um pouco para garantir que as funções estão carregadas
+        window.addEventListener('load', function() {
+            // Aguardar 1 segundo para garantir que as funções estão carregadas
             setTimeout(function() {
-                if (typeof window.updateRangeValue === 'function') {
-                    // Inicializar Stop Loss slider
-                    const maxLossPercent = document.getElementById('maxLossPercent');
-                    if (maxLossPercent) {
-                        window.updateRangeValue('maxLossPercent', 'maxLossPercentValue', '%');
+                try {
+                    if (typeof window.updateRangeValue === 'function') {
+                        // Inicializar Stop Loss slider
+                        if (document.getElementById('maxLossPercent')) {
+                            window.updateRangeValue('maxLossPercent', 'maxLossPercentValue', '%');
+                        }
+                        
+                        // Inicializar Take Profit slider
+                        if (document.getElementById('maxProfitPercent')) {
+                            window.updateRangeValue('maxProfitPercent', 'maxProfitPercentValue', '%');
+                        }
+                        
+                        console.log('✅ Sliders inicializados com sucesso');
                     }
-                    
-                    // Inicializar Take Profit slider
-                    const maxProfitPercent = document.getElementById('maxProfitPercent');
-                    if (maxProfitPercent) {
-                        window.updateRangeValue('maxProfitPercent', 'maxProfitPercentValue', '%');
-                    }
-                    
-                    console.log('✅ Sliders inicializados');
+                } catch (error) {
+                    console.error('Erro ao inicializar sliders:', error);
                 }
-            }, 500);
+            }, 1000);
         });
     </script>
 </body>
