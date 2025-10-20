@@ -200,6 +200,11 @@ async function loadExternalStrategies() {
 function openConfig() {
     document.getElementById('configModal').classList.add('active');
     loadConfig();
+    
+    // Inicializa paginação quando abrir o modal
+    setTimeout(() => {
+        initPagination();
+    }, 100);
 }
 
 function closeConfig() {
@@ -210,6 +215,9 @@ function closeConfig() {
 if (typeof window !== 'undefined') {
     window.openConfig = openConfig;
     window.closeConfig = closeConfig;
+    window.filterByType = filterByType;
+    window.changePage = changePage;
+    window.goToPage = goToPage;
 }
 
 function selectStrategy(strategyId) {
@@ -262,26 +270,158 @@ function filterStrategies() {
     updateStrategyCount(visibleCount);
 }
 
+// ═══════════════════════════════════════════════════════════════
+// PAGINAÇÃO DE ESTRATÉGIAS
+// ═══════════════════════════════════════════════════════════════
+
+let currentPage = 1;
+const strategiesPerPage = 9;
+let currentFilter = 'all';
+let allStrategyCards = [];
+
+// Inicializa paginação
+function initPagination() {
+    const grid = document.getElementById('strategiesGrid');
+    if (!grid) return;
+    
+    allStrategyCards = Array.from(grid.querySelectorAll('.strategy-card'));
+    renderPagination();
+}
+
+// Renderiza a paginação
+function renderPagination() {
+    const visibleCards = allStrategyCards.filter(card => {
+        if (currentFilter === 'all') return true;
+        return card.getAttribute('data-type') === currentFilter;
+    });
+    
+    const totalPages = Math.ceil(visibleCards.length / strategiesPerPage);
+    const startIndex = (currentPage - 1) * strategiesPerPage;
+    const endIndex = startIndex + strategiesPerPage;
+    
+    // Esconde todos os cards
+    allStrategyCards.forEach(card => card.classList.add('hidden'));
+    
+    // Mostra apenas os cards da página atual
+    visibleCards.slice(startIndex, endIndex).forEach(card => {
+        card.classList.remove('hidden');
+    });
+    
+    // Atualiza contador
+    updateStrategyCount(visibleCards.length, startIndex + 1, Math.min(endIndex, visibleCards.length));
+    
+    // Renderiza números de página
+    renderPageNumbers(totalPages);
+    
+    // Atualiza botões de navegação
+    const prevBtn = document.getElementById('prevPageBtn');
+    const nextBtn = document.getElementById('nextPageBtn');
+    
+    if (prevBtn) prevBtn.disabled = currentPage === 1;
+    if (nextBtn) nextBtn.disabled = currentPage === totalPages || totalPages === 0;
+}
+
+// Renderiza números de páginas
+function renderPageNumbers(totalPages) {
+    const container = document.getElementById('paginationNumbers');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    if (totalPages <= 1) return;
+    
+    // Lógica de exibição de números
+    const maxVisible = 5; // Máximo de números visíveis
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+    
+    // Ajusta se estiver no final
+    if (endPage - startPage < maxVisible - 1) {
+        startPage = Math.max(1, endPage - maxVisible + 1);
+    }
+    
+    // Primeira página
+    if (startPage > 1) {
+        container.appendChild(createPageNumber(1));
+        if (startPage > 2) {
+            const ellipsis = document.createElement('span');
+            ellipsis.className = 'pagination-ellipsis';
+            ellipsis.textContent = '...';
+            container.appendChild(ellipsis);
+        }
+    }
+    
+    // Páginas do meio
+    for (let i = startPage; i <= endPage; i++) {
+        container.appendChild(createPageNumber(i));
+    }
+    
+    // Última página
+    if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+            const ellipsis = document.createElement('span');
+            ellipsis.className = 'pagination-ellipsis';
+            ellipsis.textContent = '...';
+            container.appendChild(ellipsis);
+        }
+        container.appendChild(createPageNumber(totalPages));
+    }
+}
+
+// Cria elemento de número de página
+function createPageNumber(pageNum) {
+    const btn = document.createElement('div');
+    btn.className = 'pagination-number';
+    if (pageNum === currentPage) {
+        btn.classList.add('active');
+    }
+    btn.textContent = pageNum;
+    btn.onclick = () => goToPage(pageNum);
+    return btn;
+}
+
+// Vai para página específica
+function goToPage(pageNum) {
+    currentPage = pageNum;
+    renderPagination();
+    
+    // Scroll suave para o topo do grid
+    const grid = document.getElementById('strategiesGrid');
+    if (grid) {
+        grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}
+
+// Muda página (anterior/próxima)
+function changePage(direction) {
+    const visibleCards = allStrategyCards.filter(card => {
+        if (currentFilter === 'all') return true;
+        return card.getAttribute('data-type') === currentFilter;
+    });
+    
+    const totalPages = Math.ceil(visibleCards.length / strategiesPerPage);
+    
+    currentPage += direction;
+    currentPage = Math.max(1, Math.min(currentPage, totalPages));
+    
+    renderPagination();
+    
+    // Scroll suave para o topo do grid
+    const grid = document.getElementById('strategiesGrid');
+    if (grid) {
+        grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}
+
 function filterByType(type) {
+    currentFilter = type;
+    currentPage = 1; // Volta para primeira página
+    
     // Atualizar botões de filtro
     document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.classList.remove('active');
     });
     event.target.classList.add('active');
-    
-    const cards = document.querySelectorAll('#strategiesGrid .strategy-card');
-    let visibleCount = 0;
-    
-    cards.forEach(card => {
-        const cardType = card.getAttribute('data-type');
-        
-        if (type === 'all' || cardType === type) {
-            card.classList.remove('hidden');
-            visibleCount++;
-        } else {
-            card.classList.add('hidden');
-        }
-    });
     
     // Limpar pesquisa
     const searchInput = document.getElementById('strategySearchInput');
@@ -289,13 +429,19 @@ function filterByType(type) {
         searchInput.value = '';
     }
     
-    updateStrategyCount(visibleCount);
+    renderPagination();
 }
 
-function updateStrategyCount(count) {
+function updateStrategyCount(total, start, end) {
     const countEl = document.getElementById('strategyCount');
     if (countEl) {
-        countEl.innerHTML = `Mostrando <strong>${count}</strong> estratégia${count !== 1 ? 's' : ''}`;
+        if (total === 0) {
+            countEl.innerHTML = `Nenhuma estratégia encontrada`;
+        } else if (total <= strategiesPerPage) {
+            countEl.innerHTML = `Mostrando <strong>${total}</strong> estratégia${total !== 1 ? 's' : ''}`;
+        } else {
+            countEl.innerHTML = `Mostrando <strong>${start}-${end}</strong> de <strong>${total}</strong> estratégias`;
+        }
     }
 }
 
@@ -2685,6 +2831,33 @@ async function startBot() {
         // 🆕 Atualizar ativo atual no dashboard
         document.getElementById('currentAssetValue').textContent = symbol;
         
+        // ⚡ FAZER PRIMEIRA ANÁLISE IMEDIATAMENTE
+        log(`⚡ Fazendo primeira análise imediata...`, 'info');
+        setTimeout(async () => {
+            try {
+                await performTradeAnalysis();
+            } catch (error) {
+                log(`⚠️ Erro na primeira análise: ${error.message}`, 'warning');
+            }
+        }, 1000); // 1 segundo de delay para estabilizar conexão
+        
+        // Iniciar loop de análise baseado no cooldown da estratégia
+        const strategy = STRATEGIES[currentStrategy];
+        const cooldownMs = (strategy.cooldownSeconds || 60) * 1000;
+        
+        log(`⏱️ Intervalo de análise: ${strategy.cooldownSeconds || 60} segundos`, 'info');
+        
+        // Loop de análise automática
+        tradingInterval = setInterval(async () => {
+            if (!isRunning || activeTradeId) return;
+            
+            try {
+                await performTradeAnalysis();
+            } catch (error) {
+                log(`⚠️ Erro na análise automática: ${error.message}`, 'warning');
+            }
+        }, cooldownMs);
+        
         await subscribeToTicks(symbol);
 
     } catch (error) {
@@ -2696,6 +2869,57 @@ async function startBot() {
 // ═══════════════════════════════════════════════════════════════
 // TICK STREAM (MONITORAMENTO EM TEMPO REAL)
 // ═══════════════════════════════════════════════════════════════
+
+// 🆕 FUNÇÃO DE ANÁLISE E TRADE (CHAMADA PELO INTERVALO)
+async function performTradeAnalysis() {
+    if (!isRunning || activeTradeId) return;
+    
+    const symbol = document.getElementById('symbol').value;
+    
+    try {
+        log(`📊 Analisando mercado...`, 'info');
+        
+        // Obter 40 candles para análise completa
+        const candles = await getCandles(symbol, 40);
+        
+        if (!candles || candles.length < 20) {
+            log('⚠️ Dados insuficientes para análise', 'warning');
+            return;
+        }
+        
+        // 📊 ATUALIZA O GRÁFICO COM AS VELAS
+        if (typeof window.updateChart === 'function') {
+            window.updateChart(candles);
+        }
+        
+        const signal = analyzeMarket(candles);
+        
+        // 📊 ATUALIZA INDICADORES NO GRÁFICO
+        if (signal && typeof window.updateIndicators === 'function') {
+            const lastCandle = candles[candles.length - 1];
+            const indicators = {
+                rsi: calculateRSI(candles.map(c => c.close)),
+                macd: calculateMACD(candles.map(c => c.close)).macd,
+                adx: calculateADX(candles),
+                signal: signal.direction ? (signal.direction === 'CALL' ? 'buy' : 'sell') : 'neutral'
+            };
+            window.updateIndicators(indicators);
+        }
+        
+        if (signal && signal.confidence >= 0.66) {
+            log(`✅ Sinal encontrado! Confiança: ${(signal.confidence * 100).toFixed(0)}%`, 'success');
+            await executeTrade(signal);
+        } else if (signal) {
+            log(`⚠️ Sinal fraco (${(signal.confidence * 100).toFixed(0)}%). Aguardando melhor oportunidade...`, 'warning');
+        } else {
+            log(`ℹ️ Nenhum sinal no momento. Aguardando...`, 'info');
+        }
+        
+    } catch (error) {
+        log(`⚠️ Erro na análise: ${error.message}`, 'warning');
+    }
+}
+
 async function subscribeToTicks(symbol) {
     try {
         log(`� Assinando tick stream de ${symbol}...`, 'info');
@@ -2719,44 +2943,25 @@ async function subscribeToTicks(symbol) {
 }
 
 async function handleTickUpdate(event) {
-    if (!isRunning || activeTradeId) return; // Não analisa se já tem trade ativo
+    if (!isRunning) return;
     
     const data = JSON.parse(event.data);
     
-    // Verificar se é um tick update
+    // Apenas atualizar preço no dashboard (não faz mais análise aqui)
     if (data.tick && data.tick.quote) {
-        const currentTime = Date.now();
-        
-        // Throttle: mínimo 5 segundos entre análises (evitar spam)
-        if (currentTime - lastAnalysisTime < analysisThrottle) {
-            return;
-        }
-        
-        lastAnalysisTime = currentTime;
-        
-        const symbol = document.getElementById('symbol').value;
         const price = data.tick.quote;
         
-        log(`📊 Novo tick: ${price.toFixed(5)} - Analisando...`, 'info');
-        
-        try {
-            // Obter 40 candles para análise completa
-            const candles = await getCandles(symbol, 40);
-            
-            if (!candles) {
-                log('⚠️ Não foi possível obter dados do mercado', 'warning');
-                return;
-            }
-            
-            const signal = analyzeMarket(candles);
-            
-            if (signal && signal.confidence >= 0.66) {
-                await executeTrade(signal);
-            }
-            
-        } catch (error) {
-            log(`⚠️ Erro na análise: ${error.message}`, 'warning');
+        // Atualizar dashboard com preço atual
+        const currentPriceEl = document.getElementById('currentPrice');
+        if (currentPriceEl) {
+            currentPriceEl.textContent = price.toFixed(5);
         }
+    }
+    
+    // Atualizar saldo quando houver mudança
+    if (data.balance && data.balance.balance) {
+        balance = parseFloat(data.balance.balance);
+        updateStats();
     }
 }
 
@@ -2791,6 +2996,11 @@ function stopBot() {
     if (wsConnection) {
         wsConnection.close();
         wsConnection = null;
+    }
+    
+    // 📊 LIMPAR GRÁFICO
+    if (typeof window.clearChart === 'function') {
+        window.clearChart();
     }
     
     // 🆕 FINALIZAR SESSÃO DE HISTÓRICO
@@ -3146,6 +3356,21 @@ async function executeTrade(signal) {
         log(`   └─ ID: ${buy.buy.contract_id}`, 'info');
         log(`   └─ Entrada: $${buy.buy.buy_price}`, 'info');
         log(`⏳ Aguardando resultado (60 segundos)...`, 'info');
+        
+        // 📊 ADICIONA MARCADOR NO GRÁFICO
+        if (typeof window.addTradeMarker === 'function') {
+            const currentCandles = chartData?.candles || [];
+            const lastCandle = currentCandles[currentCandles.length - 1];
+            
+            window.addTradeMarker({
+                direction: signal.direction,
+                symbol: symbol,
+                stake: stake,
+                price: buy.buy.buy_price,
+                epoch: lastCandle ? lastCandle.epoch : Math.floor(Date.now() / 1000),
+                contractId: buy.buy.contract_id
+            });
+        }
         
         // INICIAR COUNTDOWN (APENAS DURANTE O TRADE)
         startCountdown();

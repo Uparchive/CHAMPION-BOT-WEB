@@ -4,9 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>⚡ Champion Bot Web - Trading Platform</title>
-    <link rel="stylesheet" href="responsive.css">
-    <link rel="stylesheet" href="mobile-optimized.css">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="responsive.css">
+    <!-- 🆕 Chart.js para gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
     <!-- 🆕 jsPDF para exportar PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <!-- 🔐 Sistema de Autenticação -->
@@ -769,6 +770,17 @@
                         </div>
                     </div>
 
+                    <!-- Paginação -->
+                    <div class="pagination-container" id="paginationContainer">
+                        <button class="pagination-btn" id="prevPageBtn" onclick="changePage(-1)">
+                            ← Anterior
+                        </button>
+                        <div class="pagination-numbers" id="paginationNumbers"></div>
+                        <button class="pagination-btn" id="nextPageBtn" onclick="changePage(1)">
+                            Próxima →
+                        </button>
+                    </div>
+
                     <div class="strategy-count" id="strategyCount">
                         Mostrando <strong>8</strong> estratégias
                     </div>
@@ -863,16 +875,55 @@
                         <span class="stat-value-small" id="currentAssetValue">--</span>
                     </div>
                     <div class="stat-row">
-                        <span class="stat-label-small">📈 Estratégia:</span>
+                        <span class="stat-label-small">� Preço Atual:</span>
+                        <span class="stat-value-small" id="currentPrice">--</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label-small">�📈 Estratégia:</span>
                         <span class="stat-value-small" id="strategyValue">Champion Pro</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Right Panel - Logs -->
+            <!-- Right Panel - Logs & Chart -->
             <div class="panel">
-                <div class="panel-title">📋 Logs em Tempo Real</div>
+                <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <div class="panel-title">� Visualização</div>
+                    <div class="view-toggle-buttons">
+                        <button class="btn-view-toggle active" data-view="log" onclick="switchView('log')">
+                            �📋 Log
+                        </button>
+                        <button class="btn-view-toggle" data-view="chart" onclick="switchView('chart')">
+                            📈 Gráfico
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Log Container -->
                 <div class="log-container" id="logContainer"></div>
+                
+                <!-- Chart Container -->
+                <div class="chart-container" id="chartContainer" style="display: none;">
+                    <canvas id="candlestickChart"></canvas>
+                    <div class="chart-indicators" id="chartIndicators">
+                        <div class="indicator-item">
+                            <span class="indicator-label">RSI:</span>
+                            <span class="indicator-value" id="rsiValue">--</span>
+                        </div>
+                        <div class="indicator-item">
+                            <span class="indicator-label">MACD:</span>
+                            <span class="indicator-value" id="macdValue">--</span>
+                        </div>
+                        <div class="indicator-item">
+                            <span class="indicator-label">ADX:</span>
+                            <span class="indicator-value" id="adxValue">--</span>
+                        </div>
+                        <div class="indicator-item">
+                            <span class="indicator-label">Sinal:</span>
+                            <span class="indicator-value signal" id="signalValue">--</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -977,6 +1028,9 @@
 
     <!-- 🎯 Carregar Strategy Manager ANTES do app.js -->
     <script type="module" src="strategy-manager.js"></script>
+    
+    <!-- 📊 Carregar Chart Manager -->
+    <script src="chart-manager.js"></script>
     
     <script type="module" src="app.js"></script>
     
