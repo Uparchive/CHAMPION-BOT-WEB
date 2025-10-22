@@ -100,7 +100,12 @@ function updateChart(candles, asset) {
     if (asset && asset !== currentAsset) {
         console.log(`🔄 Ativo alterado: ${currentAsset} → ${asset}`);
         currentAsset = asset;
-        clearChart(); // Limpa gráfico anterior
+        
+        // 🧹 Limpar anotações e painel ao trocar ativo
+        if (chart.options.plugins?.annotation?.annotations) {
+            chart.options.plugins.annotation.annotations = {};
+        }
+        clearLiveTradePanel();
     }
     
     data.candles = candles;
@@ -116,7 +121,7 @@ function updateChart(candles, asset) {
         chart.options.plugins.title.text = `📈 ${asset || 'Gráfico'} - Candlestick`;
     }
     
-    chart.update('none');
+    chart.update('active');
     
     console.log(`📊 Gráfico atualizado: ${asset || '?'} - ${candles.length} velas`);
 }
@@ -125,9 +130,19 @@ function clearChart() {
     if (!chart) return;
     chart.data.labels = [];
     chart.data.datasets.forEach(ds => ds.data = []);
+    
+    // 🧹 Limpar anotações (linhas de entrada/saída)
+    if (chart.options.plugins?.annotation?.annotations) {
+        chart.options.plugins.annotation.annotations = {};
+    }
+    
     chart.update('none');
     data = { candles: [], trades: [], indicators: {} };
     currentAsset = ''; // 🧹 Reset do ativo
+    
+    // 🧹 Remover painel flutuante se existir
+    clearLiveTradePanel();
+    
     console.log('🧹 Gráfico limpo');
 }
 
@@ -186,7 +201,10 @@ function updateLiveTrade(tradeData) {
     
     const { currentPrice, entryPrice, direction, isProfit, priceDiff, priceDiffPercent } = tradeData;
     
-    // Atualizar anotação no gráfico (linha de entrada)
+    // 🔧 Garantir que plugins.annotation existe
+    if (!chart.options.plugins) {
+        chart.options.plugins = {};
+    }
     if (!chart.options.plugins.annotation) {
         chart.options.plugins.annotation = { annotations: {} };
     }
@@ -225,7 +243,8 @@ function updateLiveTrade(tradeData) {
         }
     };
     
-    chart.update('none');
+    // ⚡ Usar 'active' ao invés de 'none' para manter transições suaves
+    chart.update('active');
     
     // 📊 Atualizar painel de status do trade (criar se não existir)
     updateTradeStatusPanel(tradeData);

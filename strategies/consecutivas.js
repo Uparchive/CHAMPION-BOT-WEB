@@ -73,15 +73,17 @@ export const consecutivas = {
     minConfidence: 0.30,      // 30% já basta! (bem agressivo)
     
     // ═══════════════════════════════════════════════════════════════
-    // FUNÇÃO DE ANÁLISE - PALPITE RÁPIDO
+    // 🎯 MODO HACKER - ANÁLISE AVANÇADA DE PRECISÃO
     // ═══════════════════════════════════════════════════════════════
     
     analyze: function(candles) {
-        if (!candles || candles.length < 5) {
+        if (!candles || candles.length < 10) {
             return null;
         }
         
         const closes = candles.map(c => c.close);
+        const highs = candles.map(c => c.high);
+        const lows = candles.map(c => c.low);
         const last = closes[closes.length - 1];
         const prev = closes[closes.length - 2];
         const prev2 = closes[closes.length - 3];
@@ -91,79 +93,148 @@ export const consecutivas = {
         let reasons = [];
         
         // ═══════════════════════════════════════════════════════════
-        // DECISÃO 1: MOMENTUM DAS ÚLTIMAS 3 VELAS
+        // 🎯 DECISÃO 1: ANÁLISE DE VELAS (CANDLESTICK PATTERN)
         // ═══════════════════════════════════════════════════════════
         
-        const momentum = last - prev2; // Diferença entre última e 3 velas atrás
+        const lastCandle = candles[candles.length - 1];
+        const prevCandle = candles[candles.length - 2];
         
-        if (momentum > 0) {
-            // Preço subindo = CALL
-            direction = 'CALL';
-            score += 1;
-            reasons.push('📈 Momentum positivo (subindo)');
-        } else if (momentum < 0) {
-            // Preço caindo = PUT
-            direction = 'PUT';
-            score += 1;
-            reasons.push('📉 Momentum negativo (caindo)');
-        } else {
-            // Preço lateral = escolhe baseado na última vela
-            if (last > prev) {
+        const lastBody = Math.abs(lastCandle.close - lastCandle.open);
+        const lastRange = lastCandle.high - lastCandle.low;
+        const bodyRatio = lastBody / lastRange;
+        
+        // Vela de força (corpo grande)
+        if (bodyRatio > 0.6) {
+            if (lastCandle.close > lastCandle.open) {
+                // Vela verde forte = CALL
                 direction = 'CALL';
-                score += 0.5;
-                reasons.push('➡️ Lateral com leve alta');
+                score += 1.5;
+                reasons.push('� Vela verde forte detectada');
+            } else {
+                // Vela vermelha forte = PUT
+                direction = 'PUT';
+                score += 1.5;
+                reasons.push('� Vela vermelha forte detectada');
+            }
+        } else {
+            // Vela fraca, usar momentum
+            const momentum = last - prev2;
+            if (momentum > 0) {
+                direction = 'CALL';
+                score += 0.8;
+                reasons.push('📈 Momentum positivo');
             } else {
                 direction = 'PUT';
-                score += 0.5;
-                reasons.push('➡️ Lateral com leve queda');
+                score += 0.8;
+                reasons.push('📉 Momentum negativo');
             }
         }
         
         // ═══════════════════════════════════════════════════════════
-        // DECISÃO 2: TENDÊNCIA RECENTE (ÚLTIMAS 5 VELAS)
+        // 🎯 DECISÃO 2: ANÁLISE DE SUPORTE E RESISTÊNCIA
         // ═══════════════════════════════════════════════════════════
         
-        const first5 = closes[closes.length - 5];
-        const trend = last - first5;
+        const recent10Highs = highs.slice(-10);
+        const recent10Lows = lows.slice(-10);
+        const resistance = Math.max(...recent10Highs);
+        const support = Math.min(...recent10Lows);
+        const range = resistance - support;
+        const pricePosition = (last - support) / range; // 0 = suporte, 1 = resistência
         
-        if (trend > 0 && direction === 'CALL') {
-            score += 0.5;
-            reasons.push('✅ Tendência confirma CALL');
-        } else if (trend < 0 && direction === 'PUT') {
-            score += 0.5;
-            reasons.push('✅ Tendência confirma PUT');
+        if (pricePosition < 0.3 && direction === 'CALL') {
+            score += 1.0;
+            reasons.push('🎯 Próximo ao suporte - CALL forte');
+        } else if (pricePosition > 0.7 && direction === 'PUT') {
+            score += 1.0;
+            reasons.push('🎯 Próximo à resistência - PUT forte');
+        } else if (pricePosition >= 0.3 && pricePosition <= 0.7) {
+            score += 0.3;
+            reasons.push('➡️ Zona neutra');
         }
         
         // ═══════════════════════════════════════════════════════════
-        // DECISÃO 3: RSI SIMPLES (OPCIONAL)
+        // 🎯 DECISÃO 3: VOLUME E FORÇA DA TENDÊNCIA
+        // ═══════════════════════════════════════════════════════════
+        
+        const first8 = closes[closes.length - 8];
+        const trend = last - first8;
+        const trendPercent = (trend / first8) * 100;
+        
+        if (Math.abs(trendPercent) > 0.1) {
+            if (trend > 0 && direction === 'CALL') {
+                score += 0.8;
+                reasons.push(`✅ Tendência forte de alta (${trendPercent.toFixed(2)}%)`);
+            } else if (trend < 0 && direction === 'PUT') {
+                score += 0.8;
+                reasons.push(`✅ Tendência forte de baixa (${trendPercent.toFixed(2)}%)`);
+            }
+        }
+        
+        // ═══════════════════════════════════════════════════════════
+        // 🎯 DECISÃO 4: RSI MELHORADO
         // ═══════════════════════════════════════════════════════════
         
         const rsi = this.calculateSimpleRSI(closes, 14);
         
-        if (rsi < 40 && direction === 'CALL') {
-            score += 0.5;
-            reasons.push(`✅ RSI baixo (${rsi.toFixed(0)}) confirma CALL`);
-        } else if (rsi > 60 && direction === 'PUT') {
-            score += 0.5;
-            reasons.push(`✅ RSI alto (${rsi.toFixed(0)}) confirma PUT`);
+        if (rsi < 35 && direction === 'CALL') {
+            score += 1.0;
+            reasons.push(`🎯 RSI sobrevenda (${rsi.toFixed(0)}) - CALL forte`);
+        } else if (rsi > 65 && direction === 'PUT') {
+            score += 1.0;
+            reasons.push(`🎯 RSI sobrecompra (${rsi.toFixed(0)}) - PUT forte`);
+        } else if (rsi >= 45 && rsi <= 55) {
+            score += 0.2;
+            reasons.push(`➡️ RSI neutro (${rsi.toFixed(0)})`);
         }
         
         // ═══════════════════════════════════════════════════════════
-        // CONFIANÇA BASEADA NO SCORE
+        // 🎯 DECISÃO 5: PADRÃO DE REVERSÃO
         // ═══════════════════════════════════════════════════════════
         
-        const maxScore = 2.5; // Score máximo possível
-        const confidence = Math.min(score / maxScore, 1.0);
+        const prev3Candle = candles[candles.length - 3];
+        const consecutiveBulls = 
+            lastCandle.close > lastCandle.open &&
+            prevCandle.close > prevCandle.open &&
+            prev3Candle.close > prev3Candle.open;
         
-        // Se não atingiu confiança mínima (30%), escolhe direção aleatória baseada em RSI
+        const consecutiveBears = 
+            lastCandle.close < lastCandle.open &&
+            prevCandle.close < prevCandle.open &&
+            prev3Candle.close < prev3Candle.open;
+        
+        if (consecutiveBulls && direction === 'PUT') {
+            score += 0.7;
+            reasons.push('🔄 3 velas verdes seguidas - possível reversão PUT');
+        } else if (consecutiveBears && direction === 'CALL') {
+            score += 0.7;
+            reasons.push('🔄 3 velas vermelhas seguidas - possível reversão CALL');
+        }
+        
+        // ═══════════════════════════════════════════════════════════
+        // 🎯 CÁLCULO DE CONFIANÇA AVANÇADO
+        // ═══════════════════════════════════════════════════════════
+        
+        const maxScore = 5.8; // Score máximo possível com todas as análises
+        let confidence = Math.min(score / maxScore, 1.0);
+        
+        // Boost de confiança se múltiplos indicadores concordam
+        const strongSignals = reasons.filter(r => r.includes('forte') || r.includes('🎯')).length;
+        if (strongSignals >= 2) {
+            confidence = Math.min(confidence + 0.15, 0.95);
+            reasons.push(`🚀 BOOST: ${strongSignals} sinais fortes concordam`);
+        }
+        
+        // Se não atingiu confiança mínima, usar RSI como tiebreaker
         if (confidence < this.minConfidence) {
+            const rsi = this.calculateSimpleRSI(closes, 14);
             direction = rsi < 50 ? 'CALL' : 'PUT';
-            reasons.push(`🎲 Palpite baseado em RSI: ${direction}`);
+            confidence = this.minConfidence;
+            reasons.push(`🎲 Tiebreaker RSI: ${direction}`);
         }
         
         return {
             direction: direction,
-            confidence: Math.max(confidence, this.minConfidence), // Mínimo 30%
+            confidence: Math.max(confidence, this.minConfidence),
             score: score,
             reasons: reasons
         };

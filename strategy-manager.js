@@ -6,6 +6,7 @@
 import { diamondHands } from './strategies/diamond-hands.js';
 import { flashScalper } from './strategies/flash-scalper.js';
 import { consecutivas } from './strategies/consecutivas.js';
+import { vidente } from './strategies/vidente.js'; // 🔮 MODO VIDENTE (90%+ PRECISÃO)
 
 // ═══════════════════════════════════════════════════════════════
 // LISTA DE ESTRATÉGIAS EXTERNAS (MODULARES)
@@ -14,6 +15,7 @@ export const externalStrategies = {
     diamond: diamondHands,
     flash: flashScalper,
     consecutivas: consecutivas,
+    vidente: vidente,          // 🔮 NOVO! Modo Vidente (90%+ precisão)
     // Futuras estratégias serão adicionadas aqui:
     // titanium: titaniumShield,
     // quantum: quantumTrader,
