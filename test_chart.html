@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📊 Teste Chart.js</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #0f0f23, #1a1a3e);
+            color: #fff;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .chart-box {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .chart-container {
+            position: relative;
+            height: 400px;
+            width: 100%;
+        }
+        button {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #8338ec, #3a86ff);
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            transform: translateY(-2px);
+        }
+        .status {
+            padding: 15px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .success { color: #22c55e; }
+        .error { color: #ef4444; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Teste de Gráfico Chart.js</h1>
+        
+        <div class="status" id="status">
+            ⏳ Carregando Chart.js...
+        </div>
+        
+        <div class="chart-box">
+            <h2>Gráfico de Velas (Candlestick)</h2>
+            <div class="chart-container">
+                <canvas id="testChart"></canvas>
+            </div>
+        </div>
+        
+        <div style="text-align: center;">
+            <button onclick="updateWithRandomData()">🎲 Atualizar com Dados Aleatórios</button>
+            <button onclick="addTradeMarker()">📍 Adicionar Marcador</button>
+            <button onclick="clearTestChart()">🧹 Limpar Gráfico</button>
+        </div>
+    </div>
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    
+    <script>
+        let testChart = null;
+        let candles = [];
+        let trades = [];
+        
+        // Verificar se Chart.js carregou
+        function checkChartJS() {
+            const statusEl = document.getElementById('status');
+            
+            if (typeof Chart === 'undefined') {
+                statusEl.innerHTML = '<span class="error">❌ Chart.js NÃO carregou! Verifique sua conexão com internet.</span>';
+                return false;
+            }
+            
+            statusEl.innerHTML = '<span class="success">✅ Chart.js carregado com sucesso!</span>';
+            return true;
+        }
+        
+        // Gerar dados aleatórios
+        function generateRandomCandles(count = 20) {
+            const now = Date.now() / 1000;
+            const data = [];
+            let price = 1000 + Math.random() * 100;
+            
+            for (let i = 0; i < count; i++) {
+                const variation = (Math.random() - 0.5) * 5;
+                price += variation;
+                
+                const open = price;
+                const high = price + Math.random() * 3;
+                const low = price - Math.random() * 3;
+                const close = low + Math.random() * (high - low);
+                
+                data.push({
+                    epoch: now - (count - i) * 60,
+                    open,
+                    high,
+                    low,
+                    close
+                });
+            }
+            
+            return data;
+        }
+        
+        // Inicializar gráfico
+        function initTestChart() {
+            if (!checkChartJS()) return;
+            
+            const canvas = document.getElementById('testChart');
+            const ctx = canvas.getContext('2d');
+            
+            // Gradiente
+            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, 'rgba(102, 126, 234, 0.4)');
+            gradient.addColorStop(1, 'rgba(118, 75, 162, 0.05)');
+            
+            // Criar gráfico
+            testChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'Máxima',
+                            data: [],
+                            borderColor: 'rgba(34, 197, 94, 0.5)',
+                            backgroundColor: 'transparent',
+                            borderWidth: 1,
+                            pointRadius: 0,
+                            borderDash: [5, 5]
+                        },
+                        {
+                            label: 'Fechamento',
+                            data: [],
+                            borderColor: '#667eea',
+                            backgroundColor: gradient,
+                            borderWidth: 3,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#667eea',
+                            pointBorderColor: '#ffffff',
+                            pointBorderWidth: 2,
+                            tension: 0.3,
+                            fill: true
+                        },
+                        {
+                            label: 'Mínima',
+                            data: [],
+                            borderColor: 'rgba(239, 68, 68, 0.5)',
+                            backgroundColor: 'transparent',
+                            borderWidth: 1,
+                            pointRadius: 0,
+                            borderDash: [5, 5]
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            labels: {
+                                color: '#ffffff'
+                            }
+                        },
+                        tooltip: {
+                            enabled: true,
+                            backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                            titleColor: '#ffffff',
+                            bodyColor: '#ffffff',
+                            borderColor: '#667eea',
+                            borderWidth: 2
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#ffffff'
+                            }
+                        },
+                        y: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#ffffff'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            console.log('✅ Gráfico inicializado!');
+            
+            // Carregar dados iniciais
+            updateWithRandomData();
+        }
+        
+        // Atualizar com dados aleatórios
+        function updateWithRandomData() {
+            if (!testChart) {
+                alert('❌ Gráfico não inicializado!');
+                return;
+            }
+            
+            candles = generateRandomCandles(20);
+            
+            const labels = candles.map(c => {
+                const date = new Date(c.epoch * 1000);
+                return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            });
+            
+            testChart.data.labels = labels;
+            testChart.data.datasets[0].data = candles.map(c => c.high);
+            testChart.data.datasets[1].data = candles.map(c => c.close);
+            testChart.data.datasets[2].data = candles.map(c => c.low);
+            
+            testChart.update();
+            
+            console.log('📊 Gráfico atualizado com', candles.length, 'velas');
+        }
+        
+        // Adicionar marcador de trade
+        function addTradeMarker() {
+            if (candles.length === 0) {
+                alert('⚠️ Gere dados primeiro!');
+                return;
+            }
+            
+            const randomIndex = Math.floor(Math.random() * candles.length);
+            const trade = {
+                epoch: candles[randomIndex].epoch,
+                direction: Math.random() > 0.5 ? 'CALL' : 'PUT',
+                stake: 10 + Math.random() * 90
+            };
+            
+            trades.push(trade);
+            console.log('📍 Marcador adicionado:', trade);
+            alert(`📍 Marcador adicionado!\n\nDireção: ${trade.direction}\nValor: $${trade.stake.toFixed(2)}`);
+        }
+        
+        // Limpar gráfico
+        function clearTestChart() {
+            if (!testChart) return;
+            
+            testChart.data.labels = [];
+            testChart.data.datasets[0].data = [];
+            testChart.data.datasets[1].data = [];
+            testChart.data.datasets[2].data = [];
+            testChart.update();
+            
+            candles = [];
+            trades = [];
+            
+            console.log('🧹 Gráfico limpo!');
+        }
+        
+        // Iniciar quando DOM carregar
+        window.addEventListener('load', () => {
+            setTimeout(initTestChart, 500);
+        });
+    </script>
+</body>
+</html>

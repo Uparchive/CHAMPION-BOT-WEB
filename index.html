@@ -9,6 +9,8 @@
     <link rel="stylesheet" href="mobile-fix.css">
     <!-- 🆕 Chart.js para gráficos -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    <!-- 🆕 Chart.js Annotation Plugin (linhas de entrada/saída) -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
     <!-- 🆕 jsPDF para exportar PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <!-- 🔐 Sistema de Autenticação -->
@@ -769,6 +771,20 @@
                                 <span>⏱️ Cooldown: 1min ⚡</span>
                             </div>
                         </div>
+
+                        <!-- 🔥 Consecutivas Strategy (SEM FILTROS - PALPITE RÁPIDO) -->
+                        <div class="strategy-card premium-strategy" data-strategy="consecutivas" data-type="aggressive" onclick="selectStrategy('consecutivas')">
+                            <div class="strategy-badge-top">EXTREMO</div>
+                            <div class="strategy-icon">🔥</div>
+                            <h4>Consecutivas 🔥</h4>
+                            <p>🔥 SEM FILTROS - Palpite rápido, escolhe CALL/PUT e MANDA BALA! Operações consecutivas instantâneas!</p>
+                            <div class="strategy-stats">
+                                <span>🎲 Palpite Rápido</span>
+                                <span>💰 Stake: 1% da banca</span>
+                                <span>📊 Trades: 300-500/dia</span>
+                                <span>⏱️ Cooldown: 0s 🔥</span>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Paginação -->
@@ -783,7 +799,7 @@
                     </div>
 
                     <div class="strategy-count" id="strategyCount">
-                        Mostrando <strong>8</strong> estratégias
+                        Mostrando <strong>9</strong> estratégias
                     </div>
                 </div>
 

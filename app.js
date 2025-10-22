@@ -42,6 +42,7 @@ let countdownInterval = null;
 let requestId = 0;
 let tickSubscription = null; // Subscrição de ticks em tempo real
 let activeTradeId = null; // ID do trade ativo
+let activeTradeData = null; // 🎯 Dados do trade ativo (preço entrada, direção, etc)
 let lastAnalysisTime = 0; // Timestamp da última análise
 let analysisThrottle = 5000; // Mínimo 5 segundos entre análises (evitar spam)
 let keepAliveInterval = null; // 🆕 Keep-alive para evitar timeout
@@ -167,7 +168,8 @@ const STRATEGIES = {
     },
     // 💎 Estratégias externas modulares serão carregadas dinamicamente
     diamond: null, // Placeholder - carregada do strategy-manager.js
-    flash: null    // Placeholder - Flash Scalper
+    flash: null,   // Placeholder - Flash Scalper
+    consecutivas: null // Placeholder - Consecutivas (sem filtros)
 };
 
 let currentStrategy = 'champion';
@@ -189,6 +191,13 @@ async function loadExternalStrategies() {
             if (flashStrategy) {
                 STRATEGIES.flash = flashStrategy;
                 console.log('⚡ Estratégia Flash Scalper carregada com sucesso!');
+            }
+            
+            // Consecutivas
+            const consecutivasStrategy = window.getStrategy('consecutivas');
+            if (consecutivasStrategy) {
+                STRATEGIES.consecutivas = consecutivasStrategy;
+                console.log('🔥 Estratégia Consecutivas carregada com sucesso!');
             }
         }
     } catch (error) {
@@ -2936,12 +2945,26 @@ async function performTradeAnalysis() {
             return;
         }
         
-        // 📊 ATUALIZA O GRÁFICO COM AS VELAS
+        // 📊 ATUALIZA O GRÁFICO COM AS VELAS E O SÍMBOLO DO ATIVO
         if (typeof window.updateChart === 'function') {
-            window.updateChart(candles);
+            window.updateChart(candles, symbol);
         }
         
-        const signal = analyzeMarket(candles);
+        // 🔥 CONSECUTIVAS: Usa função própria de análise (palpite rápido)
+        const strategy = STRATEGIES[currentStrategy];
+        let signal;
+        
+        if (strategy && strategy.id === 'consecutivas' && typeof strategy.analyze === 'function') {
+            // Análise customizada da estratégia Consecutivas
+            signal = strategy.analyze(candles);
+            if (signal) {
+                log(`🔥 Consecutivas: ${signal.direction} | Confiança: ${(signal.confidence * 100).toFixed(0)}%`, 'info');
+                signal.reasons.forEach(reason => log(`   └─ ${reason}`, 'info'));
+            }
+        } else {
+            // Análise padrão para outras estratégias
+            signal = analyzeMarket(candles);
+        }
         
         // 📊 ATUALIZA INDICADORES NO GRÁFICO
         if (signal && typeof window.updateIndicators === 'function') {
@@ -2958,8 +2981,26 @@ async function performTradeAnalysis() {
         if (signal && signal.confidence >= 0.66) {
             log(`✅ Sinal encontrado! Confiança: ${(signal.confidence * 100).toFixed(0)}%`, 'success');
             await executeTrade(signal);
+        } else if (signal && signal.confidence >= 0.50) {
+            // ⚡ FLASH SCALPER & CONSECUTIVAS: Aceita sinais com 50%+ de confiança
+            const strategy = STRATEGIES[currentStrategy];
+            if (strategy && strategy.instantRetrade) {
+                log(`⚡ ${strategy.name}: Sinal aceito! Confiança: ${(signal.confidence * 100).toFixed(0)}%`, 'info');
+                await executeTrade(signal);
+            } else {
+                log(`⚠️ Sinal fraco (${(signal.confidence * 100).toFixed(0)}%). Aguardando melhor oportunidade...`, 'warning');
+            }
+        } else if (signal && signal.confidence >= 0.30) {
+            // 🔥 CONSECUTIVAS: Aceita até sinais de 30%+ (ULTRA AGRESSIVO)
+            const strategy = STRATEGIES[currentStrategy];
+            if (strategy && strategy.id === 'consecutivas') {
+                log(`🔥 Consecutivas: Palpite aceito! Confiança: ${(signal.confidence * 100).toFixed(0)}%`, 'info');
+                await executeTrade(signal);
+            } else {
+                log(`⚠️ Sinal muito fraco (${(signal.confidence * 100).toFixed(0)}%). Aguardando melhor oportunidade...`, 'warning');
+            }
         } else if (signal) {
-            log(`⚠️ Sinal fraco (${(signal.confidence * 100).toFixed(0)}%). Aguardando melhor oportunidade...`, 'warning');
+            log(`⚠️ Sinal muito fraco (${(signal.confidence * 100).toFixed(0)}%). Aguardando melhor oportunidade...`, 'warning');
         } else {
             log(`ℹ️ Nenhum sinal no momento. Aguardando...`, 'info');
         }
@@ -2992,7 +3033,8 @@ async function subscribeToTicks(symbol) {
 }
 
 async function handleTickUpdate(event) {
-    if (!isRunning) return;
+    // ⚡ CONTINUAR PROCESSANDO SE HÁ TRADE ATIVO (mesmo se bot está parando)
+    if (!isRunning && !activeTradeId) return;
     
     const data = JSON.parse(event.data);
     
@@ -3005,6 +3047,35 @@ async function handleTickUpdate(event) {
         if (currentPriceEl) {
             currentPriceEl.textContent = price.toFixed(5);
         }
+        
+        // 🎯 ATUALIZAR GRÁFICO EM TEMPO REAL DURANTE TRADE ATIVO
+        if (activeTradeId && activeTradeData && typeof window.updateLiveTrade === 'function') {
+            const direction = activeTradeData.direction;
+            const entryPrice = activeTradeData.entryPrice;
+            
+            // Calcular se está em lucro ou prejuízo
+            let isProfit = false;
+            if (direction === 'CALL') {
+                // CALL: Lucro se preço atual > preço entrada
+                isProfit = price > entryPrice;
+            } else if (direction === 'PUT') {
+                // PUT: Lucro se preço atual < preço entrada
+                isProfit = price < entryPrice;
+            }
+            
+            // Calcular porcentagem de diferença
+            const priceDiff = Math.abs(price - entryPrice);
+            const priceDiffPercent = (priceDiff / entryPrice) * 100;
+            
+            window.updateLiveTrade({
+                currentPrice: price,
+                entryPrice: entryPrice,
+                direction: direction,
+                isProfit: isProfit,
+                priceDiff: priceDiff,
+                priceDiffPercent: priceDiffPercent
+            });
+        }
     }
     
     // Atualizar saldo quando houver mudança
@@ -3015,7 +3086,53 @@ async function handleTickUpdate(event) {
 }
 
 function stopBot() {
+    // 🛑 VERIFICAR SE HÁ TRADE ATIVO
+    if (activeTradeId && activeTradeId !== 'pending') {
+        log(`⏸️ Operação ativa detectada! Aguardando finalização...`, 'warning');
+        log(`   └─ Trade ID: ${activeTradeId}`, 'info');
+        log(`   └─ O bot será parado automaticamente após o resultado.`, 'info');
+        
+        // Marcar que bot deve parar após trade
+        isRunning = false;
+        
+        // Limpar intervalos (mas manter countdown e websocket ativos)
+        if (keepAliveInterval) {
+            clearInterval(keepAliveInterval);
+            keepAliveInterval = null;
+        }
+        
+        if (tradingInterval) {
+            clearInterval(tradingInterval);
+            tradingInterval = null;
+        }
+        
+        // 🎨 ATUALIZAR UI COM ANIMAÇÃO
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const toggleBtn = document.getElementById('toggleBtn');
+        
+        if (startBtn) {
+            startBtn.disabled = true;
+            startBtn.classList.add('btn-waiting');
+            startBtn.innerHTML = '<span class="spinner"></span> Encerrando...';
+        }
+        
+        if (stopBtn) {
+            stopBtn.disabled = true;
+        }
+        
+        if (toggleBtn) {
+            toggleBtn.classList.add('btn-waiting');
+            toggleBtn.innerHTML = '<span class="spinner"></span><span>Encerrando...</span>';
+        }
+        
+        return; // Não desconecta ainda, aguarda checkTradeResult finalizar
+    }
+    
+    // Se não há trade ativo, pode parar imediatamente
     isRunning = false;
+    
+    log(`🛑 Parando bot...`, 'info');
     
     // 🔥 LIMPAR KEEP-ALIVE INTERVAL
     if (keepAliveInterval) {
@@ -3048,6 +3165,14 @@ function stopBot() {
     
     stopCountdown();
     activeTradeId = null;
+    activeTradeData = null; // 🧹 Limpar dados do trade
+    
+    finalizeBotShutdown();
+}
+
+// 🛑 FINALIZAR DESLIGAMENTO DO BOT (chamado após trade finalizar)
+function finalizeBotShutdown() {
+    log(`🛑 Desconectando...`, 'info');
     
     if (wsConnection) {
         wsConnection.close();
@@ -3057,6 +3182,11 @@ function stopBot() {
     // 📊 LIMPAR GRÁFICO
     if (typeof window.clearChart === 'function') {
         window.clearChart();
+    }
+    
+    // 🧹 Limpar painel de trade ao vivo
+    if (typeof window.clearLiveTradePanel === 'function') {
+        window.clearLiveTradePanel();
     }
     
     // 🔥 RESETAR ATIVO ATUAL
@@ -3078,14 +3208,31 @@ function stopBot() {
     
     updateStatus('disconnected', 'Desconectado');
     
-    // 🆕 Resetar ativo atual no dashboard
-    document.getElementById('currentAssetValue').textContent = '--';
+    // � ATUALIZAR UI (verificar se elementos existem)
+    const currentAssetEl = document.getElementById('currentAssetValue');
+    if (currentAssetEl) {
+        currentAssetEl.textContent = '--';
+    }
     
-    const btn = document.getElementById('toggleBtn');
-    btn.classList.remove('active');
-    btn.innerHTML = '<span class="btn-icon">▶</span><span>INICIAR BOT</span>';
+    const startBtn = document.getElementById('startBtn');
+    if (startBtn) {
+        startBtn.disabled = false;
+        startBtn.classList.remove('btn-waiting');
+        startBtn.innerHTML = '▶ INICIAR BOT';
+    }
     
-    log('⏹ Bot parado!', 'warning');
+    const stopBtn = document.getElementById('stopBtn');
+    if (stopBtn) {
+        stopBtn.disabled = false;
+    }
+    
+    const toggleBtn = document.getElementById('toggleBtn');
+    if (toggleBtn) {
+        toggleBtn.classList.remove('active', 'btn-waiting');
+        toggleBtn.innerHTML = '<span class="btn-icon">▶</span><span>INICIAR BOT</span>';
+    }
+    
+    log('⏹ Bot parado com sucesso!', 'success');
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -3412,9 +3559,20 @@ async function executeTrade(signal) {
 
         activeTradeId = buy.buy.contract_id;
 
+        // 🎯 SALVAR DADOS DO TRADE ATIVO PARA ACOMPANHAMENTO EM TEMPO REAL
+        activeTradeData = {
+            contractId: buy.buy.contract_id,
+            direction: signal.direction,
+            entryPrice: parseFloat(proposal.proposal.spot || proposal.proposal.display_value || 0),
+            stake: stake,
+            symbol: symbol,
+            startTime: Date.now()
+        };
+
         log(`✅ Trade aberto com sucesso!`, 'info');
         log(`   └─ ID: ${buy.buy.contract_id}`, 'info');
         log(`   └─ Entrada: $${buy.buy.buy_price}`, 'info');
+        log(`   └─ Preço Spot: ${activeTradeData.entryPrice}`, 'info');
         log(`⏳ Aguardando resultado (60 segundos)...`, 'info');
         
         // 📊 ADICIONA MARCADOR NO GRÁFICO
@@ -3442,6 +3600,7 @@ async function executeTrade(signal) {
 
     } catch (error) {
         activeTradeId = null;
+        activeTradeData = null; // 🧹 Limpar dados do trade
         log(`❌ Erro ao executar trade: ${error.message}`, 'error');
     }
 }
@@ -3499,15 +3658,48 @@ async function checkTradeResult(contractId) {
             
             // LIBERAR TRADE E PARAR COUNTDOWN
             activeTradeId = null;
+            activeTradeData = null; // 🧹 Limpar dados do trade
+            
+            // 🧹 Limpar painel de trade ao vivo
+            if (typeof window.clearLiveTradePanel === 'function') {
+                window.clearLiveTradePanel();
+            }
+            
             stopCountdown();
             log(`📡 Retomando monitoramento em tempo real...`, 'info');
             
             // 🆕 VERIFICAR LIMITES DIÁRIOS APÓS CADA TRADE
             checkDailyLimits();
+            
+            // 🛑 VERIFICAR SE BOT DEVE PARAR (usuário clicou em PARAR durante o trade)
+            if (!isRunning) {
+                log(`🛑 Finalizando bot após conclusão do trade...`, 'info');
+                finalizeBotShutdown();
+                return; // Não executa re-trade
+            }
+            
+            // ⚡ FLASH SCALPER: RETOMAR ANÁLISE IMEDIATAMENTE
+            const strategy = STRATEGIES[currentStrategy];
+            if (strategy && strategy.instantRetrade && isRunning) {
+                log(`⚡ ${strategy.name}: Buscando próxima oportunidade IMEDIATAMENTE...`, 'info');
+                setTimeout(() => {
+                    if (isRunning && !activeTradeId) {
+                        performTradeAnalysis();
+                    }
+                }, 2000); // 2 segundos apenas para estabilizar
+            }
         }
     } catch (error) {
         activeTradeId = null;
+        activeTradeData = null; // 🧹 Limpar dados do trade
         stopCountdown();
+        
+        // Se bot está parando, finalizar shutdown
+        if (!isRunning) {
+            log(`🛑 Finalizando bot após erro no trade...`, 'info');
+            finalizeBotShutdown();
+        }
+        
         log(`⚠️ Erro ao verificar resultado: ${error.message}`, 'warning');
     }
 }

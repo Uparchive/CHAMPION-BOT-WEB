@@ -5,6 +5,7 @@
 // Importar estratégias modulares
 import { diamondHands } from './strategies/diamond-hands.js';
 import { flashScalper } from './strategies/flash-scalper.js';
+import { consecutivas } from './strategies/consecutivas.js';
 
 // ═══════════════════════════════════════════════════════════════
 // LISTA DE ESTRATÉGIAS EXTERNAS (MODULARES)
@@ -12,6 +13,7 @@ import { flashScalper } from './strategies/flash-scalper.js';
 export const externalStrategies = {
     diamond: diamondHands,
     flash: flashScalper,
+    consecutivas: consecutivas,
     // Futuras estratégias serão adicionadas aqui:
     // titanium: titaniumShield,
     // quantum: quantumTrader,

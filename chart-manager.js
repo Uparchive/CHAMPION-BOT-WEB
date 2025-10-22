@@ -1,458 +1,310 @@
-// ═══════════════════════════════════════════════════════════════
-// CHART MANAGER - Gráfico Profissional com Animações
-// ═══════════════════════════════════════════════════════════════
+﻿// Chart Manager Premium v2.0
+console.log('📊 Chart Manager carregando...');
 
-let candlestickChart = null;
-let chartData = {
-    candles: [],
-    trades: [], // Armazena trades executados
-    indicators: {
-        rsi: null,
-        macd: null,
-        adx: null,
-        signal: null
-    }
-};
+let chart = null;
+let data = { candles: [], trades: [], indicators: {} };
+let currentAsset = ''; // 🎯 Rastreia ativo atual no gráfico
 
-// Plugin customizado para desenhar marcadores de trade
-const tradeMarkersPlugin = {
-    id: 'tradeMarkers',
-    afterDatasetsDraw(chart, args, options) {
-        const ctx = chart.ctx;
-        const trades = chartData.trades || [];
-        
-        trades.forEach(trade => {
-            // Encontra o índice da vela correspondente
-            const candleIndex = chartData.candles.findIndex(c => 
-                Math.abs(c.epoch - trade.epoch) < 60 // Mesma vela (tolerância de 60s)
-            );
-            
-            if (candleIndex === -1) return;
-            
-            // Calcula posição no gráfico
-            const meta = chart.getDatasetMeta(1); // Dataset de fechamento
-            const point = meta.data[candleIndex];
-            
-            if (!point) return;
-            
-            const x = point.x;
-            const y = point.y;
-            
-            // Cor baseada na direção
-            const isCall = trade.direction === 'CALL';
-            const color = isCall ? '#22c55e' : '#ef4444';
-            const bgColor = isCall ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)';
-            
-            // Desenha círculo externo (animação de pulso)
-            const time = Date.now() - trade.timestamp;
-            const pulseScale = 1 + Math.sin(time / 500) * 0.15;
-            
-            ctx.save();
-            
-            // Anel de pulso
-            ctx.beginPath();
-            ctx.arc(x, y, 12 * pulseScale, 0, Math.PI * 2);
-            ctx.fillStyle = bgColor;
-            ctx.fill();
-            
-            // Círculo principal
-            ctx.beginPath();
-            ctx.arc(x, y, 8, 0, Math.PI * 2);
-            ctx.fillStyle = color;
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 2;
-            ctx.fill();
-            ctx.stroke();
-            
-            // Ícone de seta
-            ctx.fillStyle = '#ffffff';
-            ctx.font = 'bold 10px Arial';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(isCall ? '▲' : '▼', x, y);
-            
-            // Label com informações
-            const labelY = isCall ? y - 25 : y + 25;
-            const labelText = `${trade.symbol} $${trade.stake.toFixed(2)}`;
-            
-            // Fundo do label
-            ctx.font = '11px "Segoe UI", Arial';
-            const textWidth = ctx.measureText(labelText).width;
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
-            ctx.fillRect(x - textWidth / 2 - 6, labelY - 10, textWidth + 12, 20);
-            
-            // Borda do label
-            ctx.strokeStyle = color;
-            ctx.lineWidth = 1;
-            ctx.strokeRect(x - textWidth / 2 - 6, labelY - 10, textWidth + 12, 20);
-            
-            // Texto do label
-            ctx.fillStyle = '#ffffff';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(labelText, x, labelY);
-            
-            ctx.restore();
-        });
-    }
-};
+function waitForChart(cb) {
+    let i = 0;
+    const check = setInterval(() => {
+        if (typeof Chart !== 'undefined') {
+            clearInterval(check);
+            console.log(' Chart.js OK');
+            cb();
+        } else if (i++ > 50) {
+            clearInterval(check);
+            console.error(' Chart.js não carregou');
+        }
+    }, 100);
+}
 
-// Registra o plugin
-Chart.register(tradeMarkersPlugin);
-
-// Inicializa o gráfico profissional
 function initChart() {
     const canvas = document.getElementById('candlestickChart');
-    if (!canvas) return;
-
+    if (!canvas || chart) return;
+    
     const ctx = canvas.getContext('2d');
-
-    // Gradientes profissionais
-    const gradient1 = ctx.createLinearGradient(0, 0, 0, 300);
-    gradient1.addColorStop(0, 'rgba(102, 126, 234, 0.3)');
-    gradient1.addColorStop(1, 'rgba(118, 75, 162, 0.05)');
-
-    const gradient2 = ctx.createLinearGradient(0, 0, 0, 300);
-    gradient2.addColorStop(0, 'rgba(102, 126, 234, 0.8)');
-    gradient2.addColorStop(1, 'rgba(118, 75, 162, 0.3)');
-
-    // Configuração profissional do gráfico
-    candlestickChart = new Chart(ctx, {
+    const grad = ctx.createLinearGradient(0, 0, 0, 300);
+    grad.addColorStop(0, 'rgba(102, 126, 234, 0.4)');
+    grad.addColorStop(1, 'rgba(118, 75, 162, 0.05)');
+    
+    chart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: [],
-            datasets: [
-                {
-                    label: 'Máxima',
-                    data: [],
-                    borderColor: 'rgba(34, 197, 94, 0.3)',
-                    backgroundColor: 'transparent',
-                    borderWidth: 1,
-                    pointRadius: 0,
-                    tension: 0.2,
-                    borderDash: [5, 5]
-                },
-                {
-                    label: 'Fechamento',
-                    data: [],
-                    borderColor: '#667eea',
-                    backgroundColor: gradient1,
-                    borderWidth: 3,
-                    pointRadius: 3,
-                    pointBackgroundColor: '#667eea',
-                    pointBorderColor: '#ffffff',
-                    pointBorderWidth: 2,
-                    pointHoverRadius: 6,
-                    pointHoverBackgroundColor: '#667eea',
-                    pointHoverBorderColor: '#ffffff',
-                    pointHoverBorderWidth: 3,
-                    tension: 0.3,
-                    fill: true
-                },
-                {
-                    label: 'Mínima',
-                    data: [],
-                    borderColor: 'rgba(239, 68, 68, 0.3)',
-                    backgroundColor: 'transparent',
-                    borderWidth: 1,
-                    pointRadius: 0,
-                    tension: 0.2,
-                    borderDash: [5, 5]
-                }
-            ]
+            datasets: [{
+                label: 'Máxima',
+                data: [],
+                borderColor: 'rgba(34, 197, 94, 0.4)',
+                borderWidth: 1,
+                pointRadius: 0,
+                borderDash: [5, 5]
+            }, {
+                label: 'Fechamento',
+                data: [],
+                borderColor: '#667eea',
+                backgroundColor: grad,
+                borderWidth: 3,
+                pointRadius: 3,
+                pointBackgroundColor: '#667eea',
+                tension: 0.3,
+                fill: true
+            }, {
+                label: 'Mínima',
+                data: [],
+                borderColor: 'rgba(239, 68, 68, 0.4)',
+                borderWidth: 1,
+                pointRadius: 0,
+                borderDash: [5, 5]
+            }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            animation: {
-                duration: 750,
-                easing: 'easeInOutQuart'
-            },
-            interaction: {
-                mode: 'index',
-                intersect: false
-            },
             plugins: {
-                legend: {
-                    display: false
+                legend: { display: false },
+                title: {
+                    display: true,
+                    text: '📈 Gráfico - Candlestick',
+                    color: '#667eea',
+                    font: { size: 16, weight: 'bold' }
                 },
                 tooltip: {
-                    enabled: true,
-                    backgroundColor: 'rgba(0, 0, 0, 0.9)',
-                    titleColor: '#ffffff',
-                    titleFont: {
-                        size: 13,
-                        weight: 'bold'
-                    },
-                    bodyColor: '#ffffff',
-                    bodyFont: {
-                        size: 12
-                    },
-                    borderColor: 'rgba(102, 126, 234, 0.8)',
-                    borderWidth: 2,
-                    padding: 12,
-                    displayColors: false,
-                    callbacks: {
-                        title: function(context) {
-                            return '⏰ ' + context[0].label;
-                        },
-                        label: function(context) {
-                            const index = context.dataIndex;
-                            const candle = chartData.candles[index];
-                            if (candle) {
-                                const change = candle.close - candle.open;
-                                const changePercent = ((change / candle.open) * 100).toFixed(2);
-                                const changeIcon = change >= 0 ? '📈' : '📉';
-                                
-                                return [
-                                    `${changeIcon} Abertura: $${candle.open.toFixed(4)}`,
-                                    `📊 Máxima: $${candle.high.toFixed(4)}`,
-                                    `📊 Mínima: $${candle.low.toFixed(4)}`,
-                                    `💰 Fechamento: $${candle.close.toFixed(4)}`,
-                                    `${change >= 0 ? '🟢' : '🔴'} Variação: ${changePercent}%`
-                                ];
-                            }
-                            return '';
-                        }
-                    }
+                    backgroundColor: 'rgba(0,0,0,0.9)',
+                    borderColor: '#667eea',
+                    borderWidth: 2
                 }
             },
             scales: {
                 x: {
-                    grid: {
-                        color: 'rgba(255, 255, 255, 0.08)',
-                        drawBorder: false,
-                        lineWidth: 1
-                    },
-                    ticks: {
-                        color: 'rgba(255, 255, 255, 0.7)',
-                        font: {
-                            size: 11,
-                            weight: '500'
-                        },
-                        maxRotation: 0,
-                        autoSkip: true,
-                        maxTicksLimit: 8
-                    }
+                    grid: { color: 'rgba(255,255,255,0.05)' },
+                    ticks: { color: 'rgba(255,255,255,0.6)', font: { size: 10 } }
                 },
                 y: {
-                    position: 'right',
-                    grid: {
-                        color: 'rgba(255, 255, 255, 0.08)',
-                        drawBorder: false,
-                        lineWidth: 1
-                    },
-                    ticks: {
-                        color: 'rgba(255, 255, 255, 0.7)',
-                        font: {
-                            size: 11,
-                            weight: '500'
-                        },
-                        callback: function(value) {
-                            return '$' + value.toFixed(4);
-                        },
-                        padding: 8
-                    }
+                    grid: { color: 'rgba(255,255,255,0.1)' },
+                    ticks: { color: 'rgba(255,255,255,0.7)', font: { size: 11 } }
                 }
             }
         }
     });
-
-    // Inicia animação de atualização dos marcadores
-    setInterval(() => {
-        if (candlestickChart && chartData.trades.length > 0) {
-            candlestickChart.update('none');
-        }
-    }, 50); // 20 FPS para animação suave
-
-    console.log('📈 Gráfico profissional inicializado');
+    
+    console.log(' Gráfico inicializado');
+    return true;
 }
 
-// Atualiza o gráfico com novas velas
-function updateChart(candles) {
-    if (!candlestickChart || !candles || candles.length === 0) return;
-
-    // Armazena as velas
-    chartData.candles = candles;
-
-    // Limita para as últimas 40 velas (melhor visualização)
-    const displayCandles = candles.slice(-40);
-
-    // Prepara os dados
-    const labels = displayCandles.map(candle => {
-        const date = new Date(candle.epoch * 1000);
-        return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    });
-
-    const highs = displayCandles.map(c => c.high);
-    const closes = displayCandles.map(c => c.close);
-    const lows = displayCandles.map(c => c.low);
-
-    // Atualiza os dados do gráfico
-    candlestickChart.data.labels = labels;
-    candlestickChart.data.datasets[0].data = highs;
-    candlestickChart.data.datasets[1].data = closes;
-    candlestickChart.data.datasets[2].data = lows;
+function updateChart(candles, asset) {
+    if (!chart && !initChart()) return;
+    if (!candles || candles.length === 0) return;
     
-    // Atualização sem animação para performance
-    candlestickChart.update('none');
-
-    console.log(`📊 Gráfico atualizado com ${displayCandles.length} velas`);
+    // 🔄 Detecta mudança de ativo
+    if (asset && asset !== currentAsset) {
+        console.log(`🔄 Ativo alterado: ${currentAsset} → ${asset}`);
+        currentAsset = asset;
+        clearChart(); // Limpa gráfico anterior
+    }
+    
+    data.candles = candles;
+    const labels = candles.map(c => new Date(c.epoch * 1000).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
+    
+    chart.data.labels = labels;
+    chart.data.datasets[0].data = candles.map(c => c.high);
+    chart.data.datasets[1].data = candles.map(c => c.close);
+    chart.data.datasets[2].data = candles.map(c => c.low);
+    
+    // 📊 Atualiza título do gráfico com o ativo
+    if (chart.options.plugins?.title) {
+        chart.options.plugins.title.text = `📈 ${asset || 'Gráfico'} - Candlestick`;
+    }
+    
+    chart.update('none');
+    
+    console.log(`📊 Gráfico atualizado: ${asset || '?'} - ${candles.length} velas`);
 }
 
-// Atualiza os indicadores técnicos
-function updateIndicators(indicators) {
-    if (!indicators) return;
-
-    chartData.indicators = indicators;
-
-    // Atualiza RSI
-    const rsiEl = document.getElementById('rsiValue');
-    if (rsiEl && indicators.rsi !== undefined) {
-        rsiEl.textContent = indicators.rsi.toFixed(2);
-        rsiEl.style.color = indicators.rsi > 70 ? '#ef4444' : 
-                            indicators.rsi < 30 ? '#22c55e' : '#ffffff';
-    }
-
-    // Atualiza MACD
-    const macdEl = document.getElementById('macdValue');
-    if (macdEl && indicators.macd !== undefined) {
-        macdEl.textContent = indicators.macd.toFixed(4);
-        macdEl.style.color = indicators.macd > 0 ? '#22c55e' : '#ef4444';
-    }
-
-    // Atualiza ADX
-    const adxEl = document.getElementById('adxValue');
-    if (adxEl && indicators.adx !== undefined) {
-        adxEl.textContent = indicators.adx.toFixed(2);
-        adxEl.style.color = indicators.adx > 25 ? '#22c55e' : 
-                            indicators.adx > 20 ? '#fbbf24' : '#ffffff';
-    }
-
-    // Atualiza Sinal
-    const signalEl = document.getElementById('signalValue');
-    if (signalEl && indicators.signal) {
-        signalEl.textContent = indicators.signal.toUpperCase();
-        signalEl.className = 'indicator-value signal';
-        
-        if (indicators.signal === 'buy' || indicators.signal === 'compra') {
-            signalEl.classList.add('buy');
-        } else if (indicators.signal === 'sell' || indicators.signal === 'venda') {
-            signalEl.classList.add('sell');
-        } else {
-            signalEl.classList.add('neutral');
-        }
-    }
-}
-
-// Alterna entre visualização de log e gráfico
-function switchView(view) {
-    const logContainer = document.getElementById('logContainer');
-    const chartContainer = document.getElementById('chartContainer');
-    const buttons = document.querySelectorAll('.btn-view-toggle');
-
-    if (view === 'log') {
-        logContainer.style.display = 'block';
-        chartContainer.style.display = 'none';
-        console.log('📋 Visualização: Log');
-    } else if (view === 'chart') {
-        logContainer.style.display = 'none';
-        chartContainer.style.display = 'flex';
-        
-        // Inicializa o gráfico se ainda não foi criado
-        if (!candlestickChart) {
-            initChart();
-        }
-        
-        console.log('📈 Visualização: Gráfico');
-    }
-
-    // Atualiza botões ativos
-    buttons.forEach(btn => {
-        if (btn.dataset.view === view) {
-            btn.classList.add('active');
-        } else {
-            btn.classList.remove('active');
-        }
-    });
-}
-
-// Adiciona marcadores de trade no gráfico
-function addTradeMarker(trade) {
-    if (!candlestickChart || !trade) return;
-
-    // Adiciona trade ao array com timestamp para animação
-    const tradeMarker = {
-        ...trade,
-        timestamp: Date.now()
-    };
-    
-    chartData.trades.push(tradeMarker);
-    
-    // Limita a 10 trades visíveis (últimos)
-    if (chartData.trades.length > 10) {
-        chartData.trades.shift();
-    }
-    
-    // Força redesenho com animação
-    candlestickChart.update();
-    
-    console.log(`📍 Marcador de trade adicionado: ${trade.direction} ${trade.symbol} $${trade.stake}`);
-    
-    // Remove automaticamente após 5 minutos
-    setTimeout(() => {
-        const index = chartData.trades.indexOf(tradeMarker);
-        if (index > -1) {
-            chartData.trades.splice(index, 1);
-            candlestickChart.update('none');
-        }
-    }, 300000); // 5 minutos
-}
-
-// Limpa o gráfico
 function clearChart() {
-    if (candlestickChart) {
-        candlestickChart.data.labels = [];
-        candlestickChart.data.datasets[0].data = [];
-        candlestickChart.data.datasets[1].data = [];
-        candlestickChart.data.datasets[2].data = [];
-        candlestickChart.update();
-    }
-    
-    chartData = {
-        candles: [],
-        trades: [],
-        indicators: {
-            rsi: null,
-            macd: null,
-            adx: null,
-            signal: null
-        }
-    };
-
-    // Reseta indicadores
-    const rsiEl = document.getElementById('rsiValue');
-    const macdEl = document.getElementById('macdValue');
-    const adxEl = document.getElementById('adxValue');
-    const signalEl = document.getElementById('signalValue');
-    
-    if (rsiEl) rsiEl.textContent = '--';
-    if (macdEl) macdEl.textContent = '--';
-    if (adxEl) adxEl.textContent = '--';
-    if (signalEl) {
-        signalEl.textContent = '--';
-        signalEl.className = 'indicator-value signal neutral';
-    }
-
+    if (!chart) return;
+    chart.data.labels = [];
+    chart.data.datasets.forEach(ds => ds.data = []);
+    chart.update('none');
+    data = { candles: [], trades: [], indicators: {} };
+    currentAsset = ''; // 🧹 Reset do ativo
     console.log('🧹 Gráfico limpo');
 }
 
-// Exporta funções globalmente
+function updateIndicators(ind) {
+    if (!ind) return;
+    data.indicators = ind;
+    
+    const els = {
+        rsi: document.getElementById('rsiValue'),
+        macd: document.getElementById('macdValue'),
+        adx: document.getElementById('adxValue'),
+        signal: document.getElementById('signalValue')
+    };
+    
+    if (els.rsi && ind.rsi) {
+        els.rsi.textContent = ind.rsi.toFixed(2);
+        els.rsi.style.color = ind.rsi > 70 ? '#ef4444' : ind.rsi < 30 ? '#22c55e' : '#fbbf24';
+    }
+    if (els.macd && ind.macd) {
+        els.macd.textContent = (ind.macd > 0 ? '+' : '') + ind.macd.toFixed(4);
+        els.macd.style.color = ind.macd > 0 ? '#22c55e' : '#ef4444';
+    }
+    if (els.adx && ind.adx) {
+        els.adx.textContent = ind.adx.toFixed(2);
+        els.adx.style.color = ind.adx > 50 ? '#22c55e' : ind.adx > 25 ? '#fbbf24' : '#ef4444';
+    }
+    if (els.signal && ind.signal) {
+        const s = ind.signal.toLowerCase();
+        els.signal.textContent = s === 'buy' ? 'COMPRA' : s === 'sell' ? 'VENDA' : 'NEUTRO';
+        els.signal.className = 'indicator-value signal ' + s;
+    }
+}
+
+function switchView(view) {
+    const log = document.getElementById('logContainer');
+    const chartDiv = document.getElementById('chartContainer');
+    if (!log || !chartDiv) return;
+    
+    document.querySelectorAll('.btn-view-toggle').forEach(b => b.classList.remove('active'));
+    
+    if (view === 'log') {
+        log.style.display = 'block';
+        chartDiv.style.display = 'none';
+        document.querySelector('[data-view="log"]')?.classList.add('active');
+    } else {
+        log.style.display = 'none';
+        chartDiv.style.display = 'block';
+        document.querySelector('[data-view="chart"]')?.classList.add('active');
+        if (!chart) initChart();
+    }
+}
+
+// 🎯 ATUALIZAÇÃO EM TEMPO REAL DO TRADE ATIVO
+function updateLiveTrade(tradeData) {
+    if (!chart) return;
+    
+    const { currentPrice, entryPrice, direction, isProfit, priceDiff, priceDiffPercent } = tradeData;
+    
+    // Atualizar anotação no gráfico (linha de entrada)
+    if (!chart.options.plugins.annotation) {
+        chart.options.plugins.annotation = { annotations: {} };
+    }
+    
+    // Linha horizontal do preço de entrada
+    chart.options.plugins.annotation.annotations = {
+        entryLine: {
+            type: 'line',
+            yMin: entryPrice,
+            yMax: entryPrice,
+            borderColor: '#fbbf24',
+            borderWidth: 2,
+            borderDash: [10, 5],
+            label: {
+                display: true,
+                content: `Entrada: ${entryPrice.toFixed(5)}`,
+                position: 'start',
+                backgroundColor: '#fbbf24',
+                color: '#000'
+            }
+        },
+        currentLine: {
+            type: 'line',
+            yMin: currentPrice,
+            yMax: currentPrice,
+            borderColor: isProfit ? '#22c55e' : '#ef4444',
+            borderWidth: 3,
+            label: {
+                display: true,
+                content: `${direction} | ${isProfit ? '🟢 LUCRO' : '🔴 PREJUÍZO'} | ${currentPrice.toFixed(5)}`,
+                position: 'end',
+                backgroundColor: isProfit ? '#22c55e' : '#ef4444',
+                color: '#fff',
+                font: { weight: 'bold', size: 12 }
+            }
+        }
+    };
+    
+    chart.update('none');
+    
+    // 📊 Atualizar painel de status do trade (criar se não existir)
+    updateTradeStatusPanel(tradeData);
+}
+
+function updateTradeStatusPanel(tradeData) {
+    const { currentPrice, entryPrice, direction, isProfit, priceDiff, priceDiffPercent } = tradeData;
+    
+    let panel = document.getElementById('liveTradePanel');
+    if (!panel) {
+        // Criar painel
+        panel = document.createElement('div');
+        panel.id = 'liveTradePanel';
+        panel.style.cssText = `
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: ${isProfit ? 'rgba(34, 197, 94, 0.95)' : 'rgba(239, 68, 68, 0.95)'};
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 14px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            z-index: 1000;
+            min-width: 220px;
+            transition: all 0.3s ease;
+        `;
+        
+        const chartContainer = document.getElementById('chartContainer');
+        if (chartContainer) {
+            chartContainer.style.position = 'relative';
+            chartContainer.appendChild(panel);
+        }
+    }
+    
+    // Atualizar cor de fundo
+    panel.style.background = isProfit ? 'rgba(34, 197, 94, 0.95)' : 'rgba(239, 68, 68, 0.95)';
+    
+    // Calcular movimento em pips (para pares de moedas normalmente é 4 casas decimais)
+    const pips = (priceDiff * 10000).toFixed(1);
+    
+    panel.innerHTML = `
+        <div style="font-size: 18px; margin-bottom: 8px;">
+            ${isProfit ? '🟢 EM LUCRO' : '🔴 EM PREJUÍZO'}
+        </div>
+        <div style="font-size: 12px; opacity: 0.9; line-height: 1.6;">
+            <div><strong>${direction}</strong> em ${entryPrice.toFixed(5)}</div>
+            <div>Atual: <strong>${currentPrice.toFixed(5)}</strong></div>
+            <div>Diferença: <strong>${priceDiff.toFixed(5)}</strong> (${pips} pips)</div>
+            <div>Variação: <strong>${priceDiffPercent.toFixed(2)}%</strong></div>
+        </div>
+    `;
+}
+
+function clearLiveTradePanel() {
+    const panel = document.getElementById('liveTradePanel');
+    if (panel) {
+        panel.remove();
+    }
+    
+    // Limpar anotações do gráfico
+    if (chart && chart.options.plugins.annotation) {
+        chart.options.plugins.annotation.annotations = {};
+        chart.update('none');
+    }
+}
+
 window.initChart = initChart;
 window.updateChart = updateChart;
+window.clearChart = clearChart;
 window.updateIndicators = updateIndicators;
 window.switchView = switchView;
-window.addTradeMarker = addTradeMarker;
-window.clearChart = clearChart;
+window.updateLiveTrade = updateLiveTrade; // 🎯 Nova função
+window.clearLiveTradePanel = clearLiveTradePanel; // 🧹 Limpar painel
 
-console.log('📊 Chart Manager Profissional carregado');
+waitForChart(() => {
+    console.log(' Chart Manager pronto');
+    setTimeout(() => {
+        if (document.getElementById('candlestickChart')) initChart();
+    }, 2000);
+});

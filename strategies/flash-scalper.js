@@ -21,12 +21,12 @@ export const flashScalper = {
     // CONFIGURAÇÕES ULTRA RÁPIDAS
     // ═══════════════════════════════════════════════════════════════
     
-    minScore: 3,              // 🔒 PRECISA 3/4 PONTOS (75% confirmação)
+    minScore: 2,              // � PRECISA 2/4 PONTOS (50% confirmação - ULTRA AGRESSIVO!)
     
     // Filtros Rápidos e Precisos
     useADXFilter: true,       // ✅ Confirma tendência
     useMACDFilter: true,      // ✅ Confirma momentum
-    useVolumeFilter: true,    // ✅ Volume precisa estar ativo
+    useVolumeFilter: false,   // ❌ DESABILITADO (mais sinais)
     useStochasticFilter: true, // ✅ NOVO: Stochastic RSI para reversões
     
     // Volatilidade IDEAL para scalping
@@ -69,9 +69,10 @@ export const flashScalper = {
     // CONTROLE DE FREQUÊNCIA - ULTRA RÁPIDO
     // ═══════════════════════════════════════════════════════════════
     
-    maxTradesPerHour: 15,     // Máximo 15 trades/hora
-    maxTradesPerDay: 150,     // Máximo 150 trades/dia
-    cooldownSeconds: 60,      // ⚡ APENAS 60 SEGUNDOS (1 MINUTO!)
+    maxTradesPerHour: 30,     // 🔥 Máximo 30 trades/hora (uma a cada 2 minutos)
+    maxTradesPerDay: 300,     // 🔥 Máximo 300 trades/dia
+    cooldownSeconds: 5,       // ⚡ APENAS 5 SEGUNDOS! (ultra rápido)
+    instantRetrade: true,     // 🚀 Reabrir trade IMEDIATAMENTE após fechar
     
     // Controle de horário
     tradingHoursStart: 6,     // Começa 6h
