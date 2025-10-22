@@ -44,6 +44,8 @@ let tickSubscription = null; // Subscrição de ticks em tempo real
 let activeTradeId = null; // ID do trade ativo
 let lastAnalysisTime = 0; // Timestamp da última análise
 let analysisThrottle = 5000; // Mínimo 5 segundos entre análises (evitar spam)
+let keepAliveInterval = null; // 🆕 Keep-alive para evitar timeout
+let currentSymbol = ''; // 🆕 Rastreia símbolo atual para detectar mudanças
 
 // Gerenciamento de contas Demo/Real
 let currentAccountType = 'demo'; // 'demo' ou 'real'
@@ -2797,6 +2799,40 @@ async function startBot() {
         // 🆕 Resetar flag de limite diário
         hasHitDailyLimit = false;
         
+        // 🔥 INICIALIZAR ATIVO ATUAL PARA DETECÇÃO DE MUDANÇA
+        currentSymbol = document.getElementById('symbol').value;
+        
+        // 🔥 SISTEMA DE KEEP-ALIVE (EXECUÇÃO EM BACKGROUND)
+        log(`🔄 Ativando keep-alive (ping a cada 30s)...`, 'info');
+        keepAliveInterval = setInterval(async () => {
+            try {
+                if (wsConnection && wsConnection.readyState === WebSocket.OPEN) {
+                    await sendWSRequest({ ping: 1 });
+                    console.log('🏓 Keep-alive ping sent');
+                }
+            } catch (error) {
+                console.warn('⚠️ Keep-alive ping failed:', error);
+            }
+        }, 30000); // 30 segundos
+        
+        // 🔥 PAGE VISIBILITY API (DETECTAR QUANDO ABA ESTÁ EM BACKGROUND)
+        if (!document.visibilityListenerAdded) {
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) {
+                    console.log('📱 Aba em background - keep-alive ativo');
+                    log(`📱 Aba minimizada - bot continua operando`, 'info');
+                } else {
+                    console.log('👁️ Aba visível - operação normal');
+                    log(`👁️ Aba reativada - sincronizando dados...`, 'info');
+                    // Forçar atualização ao retornar
+                    if (isRunning && !activeTradeId) {
+                        setTimeout(() => performTradeAnalysis(), 1000);
+                    }
+                }
+            });
+            document.visibilityListenerAdded = true;
+        }
+        
         updateStats();
         updateStatus('connected', 'Conectado');
         isRunning = true;
@@ -2875,6 +2911,19 @@ async function performTradeAnalysis() {
     if (!isRunning || activeTradeId) return;
     
     const symbol = document.getElementById('symbol').value;
+    
+    // 🔥 DETECTAR MUDANÇA DE ATIVO E LIMPAR GRÁFICO
+    if (symbol !== currentSymbol) {
+        log(`🔄 Mudança de ativo detectada: ${currentSymbol} → ${symbol}`, 'info');
+        currentSymbol = symbol;
+        
+        // Limpar gráfico antes de carregar novo ativo
+        if (typeof window.clearChart === 'function') {
+            window.clearChart();
+        }
+        
+        log(`📊 Carregando dados do novo ativo...`, 'info');
+    }
     
     try {
         log(`📊 Analisando mercado...`, 'info');
@@ -2968,6 +3017,13 @@ async function handleTickUpdate(event) {
 function stopBot() {
     isRunning = false;
     
+    // 🔥 LIMPAR KEEP-ALIVE INTERVAL
+    if (keepAliveInterval) {
+        clearInterval(keepAliveInterval);
+        keepAliveInterval = null;
+        log(`🔄 Keep-alive desativado`, 'info');
+    }
+    
     // Cancelar subscrição de ticks
     if (tickSubscription) {
         try {
@@ -3002,6 +3058,9 @@ function stopBot() {
     if (typeof window.clearChart === 'function') {
         window.clearChart();
     }
+    
+    // 🔥 RESETAR ATIVO ATUAL
+    currentSymbol = null;
     
     // 🆕 FINALIZAR SESSÃO DE HISTÓRICO
     if (currentSession) {
@@ -3047,7 +3106,8 @@ async function getCandles(symbol, count) {
                 close: parseFloat(c.close),
                 high: parseFloat(c.high),
                 low: parseFloat(c.low),
-                open: parseFloat(c.open)
+                open: parseFloat(c.open),
+                epoch: c.epoch
             }));
         }
         return null;

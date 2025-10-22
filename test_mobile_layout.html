@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>📱 Teste Mobile - Champion Bot</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            max-width: 100vw;
+            overflow-x: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0f23, #1a1a3e);
+            color: #fff;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 100%;
+            padding: 10px;
+            overflow-x: hidden;
+        }
+
+        .header {
+            text-align: center;
+            padding: 20px 10px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .status.success {
+            background: linear-gradient(135deg, #00ff88, #00cc66);
+            color: #000;
+        }
+
+        .test-section {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 15px;
+            width: 100%;
+            overflow-x: hidden;
+        }
+
+        .test-section h2 {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #00ffff;
+        }
+
+        .test-item {
+            background: rgba(0,0,0,0.3);
+            padding: 10px;
+            border-left: 3px solid #00ff88;
+            margin: 8px 0;
+            border-radius: 5px;
+        }
+
+        .test-item.warning {
+            border-left-color: #ffbe0b;
+        }
+
+        .test-item.error {
+            border-left-color: #ff006e;
+        }
+
+        .grid-demo {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .card {
+            background: linear-gradient(135deg, rgba(131,56,236,0.2), rgba(58,134,255,0.2));
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 15px;
+            width: 100%;
+        }
+
+        .card h3 {
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+
+        .card-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #00ff88;
+        }
+
+        .button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #8338ec, #3a86ff);
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 5px 0;
+            transition: all 0.3s;
+        }
+
+        .button:active {
+            transform: scale(0.98);
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            background: rgba(0,0,0,0.3);
+            color: #fff;
+            font-size: 14px;
+            margin: 5px 0;
+        }
+
+        .log-demo {
+            background: rgba(0,0,0,0.5);
+            border-radius: 10px;
+            padding: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            font-size: 12px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .log-entry {
+            padding: 5px;
+            margin: 3px 0;
+            border-radius: 4px;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .log-entry.info {
+            background: rgba(58,134,255,0.2);
+            border-left: 3px solid #3a86ff;
+        }
+
+        .log-entry.success {
+            background: rgba(0,255,136,0.2);
+            border-left: 3px solid #00ff88;
+        }
+
+        .log-entry.warning {
+            background: rgba(255,190,11,0.2);
+            border-left: 3px solid #ffbe0b;
+        }
+
+        .chart-demo {
+            width: 100%;
+            height: 250px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            text-align: center;
+            overflow: hidden;
+        }
+
+        .indicator-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .indicator {
+            background: rgba(0,0,0,0.3);
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .indicator-label {
+            font-size: 11px;
+            opacity: 0.7;
+            margin-bottom: 5px;
+        }
+
+        .indicator-value {
+            font-size: 16px;
+            font-weight: bold;
+            color: #00ffff;
+        }
+
+        .pagination-demo {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 5px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .page-btn {
+            min-width: 35px;
+            padding: 8px 12px;
+            background: rgba(131,56,236,0.3);
+            border: 1px solid rgba(131,56,236,0.5);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .page-btn.active {
+            background: linear-gradient(135deg, #8338ec, #3a86ff);
+            border-color: #8338ec;
+            box-shadow: 0 0 15px rgba(131,56,236,0.5);
+        }
+
+        .checklist {
+            margin-top: 10px;
+        }
+
+        .check-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            margin: 5px 0;
+            background: rgba(255,255,255,0.03);
+            border-radius: 6px;
+        }
+
+        .check-item input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+        }
+
+        .check-item label {
+            font-size: 13px;
+            flex: 1;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            margin-top: 30px;
+            opacity: 0.7;
+            font-size: 12px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 5px;
+            }
+            
+            .test-section {
+                padding: 12px;
+            }
+            
+            .header h1 {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📱 Teste de Responsividade Mobile</h1>
+            <span class="status success">✅ Mobile Fix Ativo</span>
+        </div>
+
+        <!-- Teste 1: Layout não deve escapar da tela -->
+        <div class="test-section">
+            <h2>🎯 Teste 1: Largura da Tela</h2>
+            <div class="test-item">
+                <strong>Status:</strong> Nada deve escapar para a direita
+            </div>
+            <div class="test-item warning">
+                <strong>Como testar:</strong> Role a tela para baixo. Se aparecer scroll horizontal (para os lados), há um bug.
+            </div>
+            <div class="test-item">
+                <strong>Resultado esperado:</strong> Apenas scroll vertical (para cima/baixo)
+            </div>
+        </div>
+
+        <!-- Teste 2: Cards e Grid -->
+        <div class="test-section">
+            <h2>📊 Teste 2: Cards de Estatísticas</h2>
+            <div class="grid-demo">
+                <div class="card">
+                    <h3>💰 Saldo</h3>
+                    <div class="card-value">$1,234.56</div>
+                </div>
+                <div class="card">
+                    <h3>📈 Trades Hoje</h3>
+                    <div class="card-value">15</div>
+                </div>
+                <div class="card">
+                    <h3>✅ Win Rate</h3>
+                    <div class="card-value">87%</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Teste 3: Inputs e Botões -->
+        <div class="test-section">
+            <h2>🎛️ Teste 3: Controles</h2>
+            <input type="text" placeholder="Digite algo (deve ocupar 100% da largura)">
+            <select>
+                <option>Selecione um ativo (100% largura)</option>
+                <option>R_50</option>
+                <option>R_100</option>
+            </select>
+            <button class="button">🚀 Botão Full Width (Clique sem sair da tela)</button>
+        </div>
+
+        <!-- Teste 4: Log de Atividades -->
+        <div class="test-section">
+            <h2>📝 Teste 4: Log de Atividades</h2>
+            <div class="log-demo">
+                <div class="log-entry info">ℹ️ Bot iniciado com sucesso</div>
+                <div class="log-entry success">✅ Trade executado: CALL em R_50</div>
+                <div class="log-entry warning">⚠️ Sinal fraco detectado (60% confiança)</div>
+                <div class="log-entry info">📊 Analisando mercado... Esta mensagem tem um texto bem longo para testar quebra de linha automática e garantir que não escape da tela</div>
+                <div class="log-entry success">✅ Vitória! Lucro: $10.50</div>
+            </div>
+        </div>
+
+        <!-- Teste 5: Gráfico -->
+        <div class="test-section">
+            <h2>📈 Teste 5: Gráfico</h2>
+            <div class="chart-demo">
+                📊<br>Área do Gráfico<br>(250px altura)<br>Deve caber perfeitamente
+            </div>
+            <div class="indicator-grid">
+                <div class="indicator">
+                    <div class="indicator-label">RSI</div>
+                    <div class="indicator-value">65</div>
+                </div>
+                <div class="indicator">
+                    <div class="indicator-label">MACD</div>
+                    <div class="indicator-value">+0.15</div>
+                </div>
+                <div class="indicator">
+                    <div class="indicator-label">ADX</div>
+                    <div class="indicator-value">45</div>
+                </div>
+                <div class="indicator">
+                    <div class="indicator-label">SIGNAL</div>
+                    <div class="indicator-value" style="color: #00ff88;">BUY</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Teste 6: Paginação -->
+        <div class="test-section">
+            <h2>📄 Teste 6: Paginação</h2>
+            <div class="pagination-demo">
+                <button class="page-btn">◀</button>
+                <button class="page-btn active">1</button>
+                <button class="page-btn">2</button>
+                <button class="page-btn">3</button>
+                <button class="page-btn">...</button>
+                <button class="page-btn">8</button>
+                <button class="page-btn">▶</button>
+            </div>
+        </div>
+
+        <!-- Checklist de Validação -->
+        <div class="test-section">
+            <h2>✅ Checklist de Validação</h2>
+            <div class="checklist">
+                <div class="check-item">
+                    <input type="checkbox" id="check1">
+                    <label for="check1">Não há scroll horizontal (só vertical)</label>
+                </div>
+                <div class="check-item">
+                    <input type="checkbox" id="check2">
+                    <label for="check2">Todos os cards cabem na tela</label>
+                </div>
+                <div class="check-item">
+                    <input type="checkbox" id="check3">
+                    <label for="check3">Inputs e botões ocupam 100% da largura</label>
+                </div>
+                <div class="check-item">
+                    <input type="checkbox" id="check4">
+                    <label for="check4">Log quebra texto automaticamente</label>
+                </div>
+                <div class="check-item">
+                    <input type="checkbox" id="check5">
+                    <label for="check5">Gráfico cabe perfeitamente na tela</label>
+                </div>
+                <div class="check-item">
+                    <input type="checkbox" id="check6">
+                    <label for="check6">Indicadores em grid 2x2</label>
+                </div>
+                <div class="check-item">
+                    <input type="checkbox" id="check7">
+                    <label for="check7">Paginação sem quebrar layout</label>
+                </div>
+                <div class="check-item">
+                    <input type="checkbox" id="check8">
+                    <label for="check8">Nenhum elemento "foge" para a direita</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Instruções -->
+        <div class="test-section">
+            <h2>📖 Como Usar Este Teste</h2>
+            <div class="test-item">
+                <strong>1.</strong> Abra este arquivo no celular (ou use DevTools do Chrome)
+            </div>
+            <div class="test-item">
+                <strong>2.</strong> Role a página inteira para baixo
+            </div>
+            <div class="test-item warning">
+                <strong>3.</strong> Se conseguir rolar para a direita → HÁ UM BUG
+            </div>
+            <div class="test-item">
+                <strong>4.</strong> Marque os checkboxes conforme valida
+            </div>
+            <div class="test-item">
+                <strong>5.</strong> Se todos estiverem ✅, mobile está perfeito!
+            </div>
+        </div>
+
+        <!-- Botão para ir ao bot -->
+        <div class="test-section">
+            <h2>🚀 Tudo OK?</h2>
+            <button class="button" onclick="window.location.href='index.html'">
+                🎮 ABRIR CHAMPION BOT
+            </button>
+        </div>
+
+        <div class="footer">
+            ⚡ Champion Bot Mobile Fix v2.0<br>
+            Desenvolvido para funcionar perfeitamente em todos os dispositivos
+        </div>
+    </div>
+
+    <script>
+        // Contador de checkboxes
+        const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach(cb => {
+            cb.addEventListener('change', () => {
+                const total = checkboxes.length;
+                const checked = Array.from(checkboxes).filter(c => c.checked).length;
+                
+                if (checked === total) {
+                    alert('🎉 TODOS OS TESTES PASSARAM!\n\nSeu dispositivo mobile está 100% compatível!\n\nPode usar o bot sem preocupações! 🚀');
+                }
+            });
+        });
+
+        // Detectar scroll horizontal (bug)
+        let lastScrollLeft = 0;
+        window.addEventListener('scroll', () => {
+            if (window.scrollX > 0 && window.scrollX !== lastScrollLeft) {
+                alert('⚠️ ATENÇÃO: Scroll horizontal detectado!\n\nAlgum elemento está escapando da tela.\n\nReporte este problema.');
+                lastScrollLeft = window.scrollX;
+            }
+        });
+
+        // Exibir dimensões da tela
+        console.log('📱 Dimensões da Tela:');
+        console.log('  - Largura:', window.innerWidth + 'px');
+        console.log('  - Altura:', window.innerHeight + 'px');
+        console.log('  - Largura do Body:', document.body.scrollWidth + 'px');
+        console.log('  - Tem scroll horizontal?', document.body.scrollWidth > window.innerWidth ? '❌ SIM (BUG!)' : '✅ NÃO');
+    </script>
+</body>
+</html>

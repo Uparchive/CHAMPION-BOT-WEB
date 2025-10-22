@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔥 Teste: Background + Mudança de Ativo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            color: #fff;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            text-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+        }
+
+        .test-section {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .test-section h2 {
+            color: #00ffff;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+
+        .test-section h3 {
+            color: #ffaa00;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+
+        .test-step {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-left: 4px solid #00ff00;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+
+        .test-step.warning {
+            border-left-color: #ffaa00;
+        }
+
+        .test-step.error {
+            border-left-color: #ff0000;
+        }
+
+        .code {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            margin: 5px 0;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .checkbox-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            margin: 5px;
+        }
+
+        .status-success {
+            background: #00ff00;
+            color: #000;
+        }
+
+        .status-warning {
+            background: #ffaa00;
+            color: #000;
+        }
+
+        .status-info {
+            background: #00ffff;
+            color: #000;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .feature-list li {
+            padding: 8px 0;
+            padding-left: 30px;
+            position: relative;
+        }
+
+        .feature-list li:before {
+            content: '✅';
+            position: absolute;
+            left: 0;
+            font-size: 1.2rem;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #00ff00, #00cc00);
+            color: #000;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: bold;
+            text-align: center;
+            margin: 10px 5px;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 255, 0, 0.4);
+        }
+
+        .button.secondary {
+            background: linear-gradient(135deg, #00ffff, #00cccc);
+        }
+
+        .timer {
+            text-align: center;
+            font-size: 3rem;
+            color: #00ff00;
+            margin: 20px 0;
+            text-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff00, #00ffff);
+            width: 0%;
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #000;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔥 Teste: Sistema de Background + Mudança de Ativo</h1>
+
+        <!-- Status do Sistema -->
+        <div class="test-section">
+            <h2>📊 Status do Sistema</h2>
+            <div>
+                <span class="status-badge status-success">✅ Keep-Alive Implementado</span>
+                <span class="status-badge status-success">✅ Detecção de Mudança de Ativo</span>
+                <span class="status-badge status-success">✅ Page Visibility API</span>
+                <span class="status-badge status-success">✅ Limpeza de Gráfico</span>
+            </div>
+        </div>
+
+        <!-- Features Implementadas -->
+        <div class="test-section">
+            <h2>🎯 Features Implementadas</h2>
+            <ul class="feature-list">
+                <li><strong>Keep-Alive:</strong> Ping a cada 30 segundos para manter WebSocket ativo</li>
+                <li><strong>Background Execution:</strong> Bot continua operando mesmo com aba minimizada</li>
+                <li><strong>Asset Change Detection:</strong> Detecta quando muda de ativo e limpa gráfico</li>
+                <li><strong>Page Visibility API:</strong> Detecta quando aba está visível/oculta</li>
+                <li><strong>Auto-Sync:</strong> Atualiza dados automaticamente ao reativar aba</li>
+                <li><strong>Resource Cleanup:</strong> Limpa todos os intervals ao parar o bot</li>
+            </ul>
+        </div>
+
+        <!-- Teste 1: Keep-Alive -->
+        <div class="test-section">
+            <h2>🧪 Teste 1: Keep-Alive em Background</h2>
+            <div class="test-step">
+                <strong>Objetivo:</strong> Verificar se o bot continua funcionando com aba minimizada
+            </div>
+            <div class="test-step warning">
+                <strong>Passos:</strong><br>
+                1. Abra o bot principal (index.html)<br>
+                2. Clique em INICIAR BOT<br>
+                3. Abra o Console (F12)<br>
+                4. <strong>Minimize a aba ou troque para outra aba</strong><br>
+                5. Aguarde 2 minutos assistindo algo<br>
+                6. Volte para a aba do bot
+            </div>
+            <div class="test-step">
+                <strong>Resultado Esperado:</strong><br>
+                ✅ Console mostra múltiplos "🏓 Keep-alive ping sent"<br>
+                ✅ Log mostra "📱 Aba minimizada - bot continua operando"<br>
+                ✅ Ao voltar: "👁️ Aba reativada - sincronizando dados..."<br>
+                ✅ Bot não travou
+            </div>
+            <h3>📋 Checklist</h3>
+            <label class="checkbox-item">
+                <input type="checkbox" id="test1-1">
+                <span>Keep-alive pings aparecem no console a cada 30s</span>
+            </label>
+            <label class="checkbox-item">
+                <input type="checkbox" id="test1-2">
+                <span>Bot continuou operando em background</span>
+            </label>
+            <label class="checkbox-item">
+                <input type="checkbox" id="test1-3">
+                <span>Log mostra mensagem de aba minimizada</span>
+            </label>
+            <label class="checkbox-item">
+                <input type="checkbox" id="test1-4">
+                <span>Dados sincronizam ao reativar aba</span>
+            </label>
+        </div>
+
+        <!-- Teste 2: Mudança de Ativo -->
+        <div class="test-section">
+            <h2>🧪 Teste 2: Mudança de Ativo no Gráfico</h2>
+            <div class="test-step">
+                <strong>Objetivo:</strong> Verificar se gráfico atualiza ao mudar de ativo
+            </div>
+            <div class="test-step warning">
+                <strong>Passos:</strong><br>
+                1. Configure: Ativo = R_50, Estratégia = Flash Scalper<br>
+                2. Clique em INICIAR BOT<br>
+                3. Aguarde gráfico carregar (velas de R_50)<br>
+                4. <strong>Troque o ativo para R_100</strong><br>
+                5. Aguarde 60 segundos (próxima análise)
+            </div>
+            <div class="test-step">
+                <strong>Resultado Esperado:</strong><br>
+                ✅ Console mostra "🔄 Mudança de ativo detectada: R_50 → R_100"<br>
+                ✅ Gráfico é limpo (velas antigas somem)<br>
+                ✅ Gráfico carrega velas do R_100<br>
+                ✅ Não há mistura de velas
+            </div>
+            <h3>📋 Checklist</h3>
+            <label class="checkbox-item">
+                <input type="checkbox" id="test2-1">
+                <span>Console detectou mudança de ativo</span>
+            </label>
+            <label class="checkbox-item">
+                <input type="checkbox" id="test2-2">
+                <span>Gráfico foi limpo antes de carregar novo ativo</span>
+            </label>
+            <label class="checkbox-item">
+                <input type="checkbox" id="test2-3">
+                <span>Velas novas correspondem ao ativo correto</span>
+            </label>
+            <label class="checkbox-item">
+                <input type="checkbox" id="test2-4">
+                <span>Não há velas antigas misturadas</span>
+            </label>
+        </div>
+
+        <!-- Teste 3: Logs Esperados -->
+        <div class="test-section">
+            <h2>🔍 Logs Esperados no Console</h2>
+            
+            <h3>Ao iniciar:</h3>
+            <div class="code">
+🔄 Ativando keep-alive (ping a cada 30s)...
+            </div>
+
+            <h3>Durante execução (a cada 30s):</h3>
+            <div class="code">
+🏓 Keep-alive ping sent
+            </div>
+
+            <h3>Ao minimizar aba:</h3>
+            <div class="code">
+📱 Aba em background - keep-alive ativo
+📱 Aba minimizada - bot continua operando
+            </div>
+
+            <h3>Ao voltar para aba:</h3>
+            <div class="code">
+👁️ Aba visível - operação normal
+👁️ Aba reativada - sincronizando dados...
+            </div>
+
+            <h3>Ao mudar de ativo:</h3>
+            <div class="code">
+🔄 Mudança de ativo detectada: R_50 → R_100
+📊 Carregando dados do novo ativo...
+            </div>
+
+            <h3>Ao parar bot:</h3>
+            <div class="code">
+🔄 Keep-alive desativado
+            </div>
+        </div>
+
+        <!-- Timer de Teste -->
+        <div class="test-section">
+            <h2>⏱️ Timer de Teste</h2>
+            <p>Use este timer para medir os 2 minutos de teste em background:</p>
+            <div class="timer" id="timer">02:00</div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress">0%</div>
+            </div>
+            <div style="text-align: center;">
+                <button class="button" onclick="startTimer()">▶ Iniciar Timer</button>
+                <button class="button secondary" onclick="resetTimer()">🔄 Resetar</button>
+            </div>
+        </div>
+
+        <!-- Conclusão -->
+        <div class="test-section">
+            <h2>✅ Conclusão Final</h2>
+            <div class="test-step">
+                <strong>Total de Checkboxes:</strong> <span id="totalChecked">0</span> / 8
+            </div>
+            <div class="test-step" style="border-left-color: #00ffff;">
+                <strong>Próximos Passos:</strong><br>
+                • Teste todos os cenários acima<br>
+                • Marque os checkboxes conforme valida<br>
+                • Se todos estiverem ✅, sistema está 100% funcional!<br>
+                • Se encontrar problemas, abra o console e copie os erros
+            </div>
+            <div style="text-align: center; margin-top: 20px;">
+                <a href="index.html" class="button" style="font-size: 1.2rem; padding: 15px 40px;">
+                    🚀 ABRIR BOT PRINCIPAL
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Timer de Teste
+        let timerInterval;
+        let timeLeft = 120; // 2 minutos
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            timeLeft = 120;
+            
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                
+                document.getElementById('timer').textContent = 
+                    `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                
+                const progress = ((120 - timeLeft) / 120) * 100;
+                const progressEl = document.getElementById('progress');
+                progressEl.style.width = progress + '%';
+                progressEl.textContent = Math.floor(progress) + '%';
+                
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    alert('⏰ 2 minutos completos! Volte para a aba do bot e verifique se ele continuou funcionando.');
+                    document.getElementById('timer').classList.add('pulse');
+                }
+            }, 1000);
+        }
+
+        function resetTimer() {
+            clearInterval(timerInterval);
+            timeLeft = 120;
+            document.getElementById('timer').textContent = '02:00';
+            document.getElementById('timer').classList.remove('pulse');
+            document.getElementById('progress').style.width = '0%';
+            document.getElementById('progress').textContent = '0%';
+        }
+
+        // Contador de Checkboxes
+        const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', updateCheckboxCount);
+        });
+
+        function updateCheckboxCount() {
+            const total = checkboxes.length;
+            const checked = Array.from(checkboxes).filter(cb => cb.checked).length;
+            document.getElementById('totalChecked').textContent = checked;
+            
+            if (checked === total) {
+                alert('🎉 Todos os testes validados! Sistema 100% funcional!');
+            }
+        }
+
+        // Inicializar contador
+        updateCheckboxCount();
+    </script>
+</body>
+</html>
