@@ -258,6 +258,11 @@ function selectStrategy(strategyId) {
     document.getElementById('strategyValue').textContent = STRATEGIES[strategyId].name;
     
     log(`📊 Estratégia selecionada: ${STRATEGIES[strategyId].name}`, 'info');
+    
+    // 💾 Salvar configuração automaticamente
+    if (typeof saveUserSettings === 'function') {
+        saveUserSettings();
+    }
 }
 
 // 🔥 EXPORTA IMEDIATAMENTE PARA ESCOPO GLOBAL
@@ -503,6 +508,7 @@ function decryptToken(encrypted) {
 // ═══════════════════════════════════════════════════════════════
 function selectAccountType(type) {
     currentAccountType = type;
+    accountType = type; // Atualizar variável global também
     
     // Atualizar botões (com verificação)
     document.querySelectorAll('.account-btn').forEach(btn => {
@@ -527,6 +533,11 @@ function selectAccountType(type) {
             apiTokenReal = apiTokenRealEl.value.trim();
         }
         log('💰 Modo REAL ativado - ⚠️ DINHEIRO REAL EM RISCO!', 'warning');
+    }
+    
+    // 💾 Salvar configuração automaticamente
+    if (typeof saveUserSettings === 'function') {
+        saveUserSettings();
     }
 }
 
@@ -844,6 +855,190 @@ function updateRangeValue(inputId, displayId, suffix = '') {
 // 🔥 EXPORTA PARA ESCOPO GLOBAL
 if (typeof window !== 'undefined') {
     window.updateRangeValue = updateRangeValue;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 💾 SALVAR E RESTAURAR CONFIGURAÇÕES DO USUÁRIO
+// ═══════════════════════════════════════════════════════════════
+
+function saveUserSettings() {
+    try {
+        const settings = {
+            // 🔑 Tokens (se checkbox "lembrar" estiver marcado)
+            rememberToken: document.getElementById('rememberToken')?.checked || false,
+            apiTokenDemo: document.getElementById('rememberToken')?.checked ? 
+                document.getElementById('apiTokenDemo')?.value || '' : '',
+            apiTokenReal: document.getElementById('rememberToken')?.checked ? 
+                document.getElementById('apiTokenReal')?.value || '' : '',
+            
+            // 🎯 Estratégia selecionada
+            currentStrategy: currentStrategy,
+            
+            // 💰 Configurações de Stake
+            stakeMode: stakeMode,
+            manualStakeValue: manualStakeValue,
+            
+            // 📊 Configurações de Stop Loss
+            stopLossType: stopLossType,
+            stopLossPercent: document.getElementById('maxLossPercent')?.value || 10,
+            stopLossValue: document.getElementById('maxLossFixed')?.value || 10,
+            
+            // 📈 Configurações de Stop Win
+            stopWinType: stopWinType,
+            stopWinPercent: document.getElementById('maxWinPercent')?.value || 20,
+            stopWinValue: document.getElementById('maxWinFixed')?.value || 20,
+            
+            // 🏦 Tipo de conta
+            accountType: accountType,
+            
+            // 📅 Data de salvamento
+            savedAt: new Date().toISOString()
+        };
+        
+        localStorage.setItem('championbot_user_settings', JSON.stringify(settings));
+        console.log('💾 Configurações salvas com sucesso!', settings);
+    } catch (error) {
+        console.error('⚠️ Erro ao salvar configurações:', error);
+    }
+}
+
+function restoreUserSettings() {
+    try {
+        const saved = localStorage.getItem('championbot_user_settings');
+        if (!saved) {
+            console.log('ℹ️ Nenhuma configuração salva encontrada');
+            return;
+        }
+        
+        const settings = JSON.parse(saved);
+        console.log('📂 Restaurando configurações salvas:', settings);
+        
+        // 🔑 Restaurar tokens (se usuário marcou "lembrar")
+        if (settings.rememberToken) {
+            const rememberCheckbox = document.getElementById('rememberToken');
+            if (rememberCheckbox) rememberCheckbox.checked = true;
+            
+            const tokenDemoEl = document.getElementById('apiTokenDemo');
+            if (tokenDemoEl && settings.apiTokenDemo) {
+                tokenDemoEl.value = settings.apiTokenDemo;
+            }
+            
+            const tokenRealEl = document.getElementById('apiTokenReal');
+            if (tokenRealEl && settings.apiTokenReal) {
+                tokenRealEl.value = settings.apiTokenReal;
+            }
+        }
+        
+        // 🎯 Restaurar estratégia
+        if (settings.currentStrategy && STRATEGIES[settings.currentStrategy]) {
+            currentStrategy = settings.currentStrategy;
+            selectStrategy(currentStrategy);
+        }
+        
+        // 💰 Restaurar Stake
+        if (settings.stakeMode) {
+            stakeMode = settings.stakeMode;
+            toggleStakeMode(stakeMode);
+        }
+        if (settings.manualStakeValue) {
+            manualStakeValue = settings.manualStakeValue;
+            const manualStakeEl = document.getElementById('manualStake');
+            if (manualStakeEl) manualStakeEl.value = settings.manualStakeValue;
+        }
+        
+        // 📊 Restaurar Stop Loss
+        if (settings.stopLossType) {
+            stopLossType = settings.stopLossType;
+            toggleRiskType('stopLoss', stopLossType);
+        }
+        if (settings.stopLossPercent) {
+            const el = document.getElementById('maxLossPercent');
+            if (el) {
+                el.value = settings.stopLossPercent;
+                updateRangeValue('maxLossPercent', 'maxLossPercentValue', '%');
+            }
+        }
+        if (settings.stopLossValue) {
+            const el = document.getElementById('maxLossFixed');
+            if (el) el.value = settings.stopLossValue;
+        }
+        
+        // 📈 Restaurar Stop Win
+        if (settings.stopWinType) {
+            stopWinType = settings.stopWinType;
+            toggleRiskType('stopWin', stopWinType);
+        }
+        if (settings.stopWinPercent) {
+            const el = document.getElementById('maxWinPercent');
+            if (el) {
+                el.value = settings.stopWinPercent;
+                updateRangeValue('maxWinPercent', 'maxWinPercentValue', '%');
+            }
+        }
+        if (settings.stopWinValue) {
+            const el = document.getElementById('maxWinFixed');
+            if (el) el.value = settings.stopWinValue;
+        }
+        
+        // 🏦 Restaurar tipo de conta
+        if (settings.accountType) {
+            accountType = settings.accountType;
+            selectAccountType(accountType);
+        }
+        
+        log('✅ Configurações restauradas com sucesso!', 'success');
+    } catch (error) {
+        console.error('⚠️ Erro ao restaurar configurações:', error);
+    }
+}
+
+// 🔄 Auto-salvar quando usuário alterar configurações
+function setupAutoSave() {
+    // Salvar quando fechar o modal de configurações
+    const closeBtn = document.querySelector('#configModal .close-btn');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            saveUserSettings();
+        });
+    }
+    
+    // Salvar quando mudar token (se checkbox estiver marcado)
+    const rememberCheckbox = document.getElementById('rememberToken');
+    const tokenDemoEl = document.getElementById('apiTokenDemo');
+    const tokenRealEl = document.getElementById('apiTokenReal');
+    
+    if (rememberCheckbox) {
+        rememberCheckbox.addEventListener('change', saveUserSettings);
+    }
+    if (tokenDemoEl) {
+        tokenDemoEl.addEventListener('blur', saveUserSettings);
+    }
+    if (tokenRealEl) {
+        tokenRealEl.addEventListener('blur', saveUserSettings);
+    }
+    
+    // Salvar quando mudar stake
+    const manualStakeEl = document.getElementById('manualStake');
+    if (manualStakeEl) {
+        manualStakeEl.addEventListener('blur', saveUserSettings);
+    }
+    
+    // Salvar quando mudar stop loss/win
+    ['maxLossPercent', 'maxLossFixed', 'maxWinPercent', 'maxWinFixed'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('blur', saveUserSettings);
+        }
+    });
+    
+    console.log('🔄 Auto-save configurado com sucesso!');
+}
+
+// 🔥 EXPORTA PARA ESCOPO GLOBAL
+if (typeof window !== 'undefined') {
+    window.saveUserSettings = saveUserSettings;
+    window.restoreUserSettings = restoreUserSettings;
+    window.setupAutoSave = setupAutoSave;
 }
 
 function checkDailyLimits() {
@@ -4004,6 +4199,16 @@ window.addEventListener('beforeunload', (event) => {
 window.onload = () => {
     loadConfig();
     loadSessionHistory(); // 🆕 Carregar histórico de sessões
+    
+    // 💾 Restaurar configurações salvas do usuário
+    setTimeout(() => {
+        restoreUserSettings();
+    }, 200);
+    
+    // 🔄 Configurar auto-save
+    setTimeout(() => {
+        setupAutoSave();
+    }, 300);
     
     // 🆕 Adicionar listener para atualizar stake manual em tempo real
     const manualStakeInput = document.getElementById('manualStake');
