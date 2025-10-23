@@ -51,6 +51,7 @@ let currentSymbol = ''; // 🆕 Rastreia símbolo atual para detectar mudanças
 
 // Gerenciamento de contas Demo/Real
 let currentAccountType = 'demo'; // 'demo' ou 'real'
+let accountType = 'demo'; // Alias para compatibilidade
 let apiTokenDemo = '';
 
 // Sistema anti-duplicação de logs
@@ -63,9 +64,11 @@ let securityPassword = ''; // Senha configurada pelo usuário
 
 // 🆕 Gestão de Risco Diária (Stop Loss e Take Profit)
 let maxDailyLossType = 'percent'; // 'percent' ou 'value'
+let stopLossType = 'percent'; // Alias para compatibilidade
 let maxDailyLossPercent = 10; // Padrão: 10% da banca inicial
 let maxDailyLossValue = 0; // Valor fixo em USD
 let maxDailyProfitType = 'percent'; // 'percent' ou 'value'
+let stopWinType = 'percent'; // Alias para compatibilidade
 let maxDailyProfitPercent = 0; // Padrão: desabilitado (0 = sem limite)
 let maxDailyProfitValue = 0; // Valor fixo em USD
 let hasHitDailyLimit = false; // Flag para parar bot se atingir limite
@@ -228,7 +231,15 @@ function openConfig() {
 }
 
 function closeConfig() {
+    // 💾 Salvar configurações antes de fechar
+    if (typeof saveUserSettings === 'function') {
+        saveUserSettings();
+    }
+    
     document.getElementById('configModal').classList.remove('active');
+    
+    // Log de confirmação
+    console.log('✅ Configurações salvas ao fechar modal');
 }
 
 // 🔥 EXPORTA IMEDIATAMENTE PARA ESCOPO GLOBAL
@@ -932,7 +943,25 @@ function restoreUserSettings() {
         // 🎯 Restaurar estratégia
         if (settings.currentStrategy && STRATEGIES[settings.currentStrategy]) {
             currentStrategy = settings.currentStrategy;
-            selectStrategy(currentStrategy);
+            
+            // Atualizar display imediatamente
+            const strategyValueEl = document.getElementById('strategyValue');
+            if (strategyValueEl && STRATEGIES[currentStrategy]) {
+                strategyValueEl.textContent = STRATEGIES[currentStrategy].name;
+            }
+            
+            // Marcar card como ativo (quando modal abrir)
+            setTimeout(() => {
+                const cards = document.querySelectorAll('.strategy-card');
+                cards.forEach(card => card.classList.remove('active'));
+                
+                const activeCard = document.querySelector(`.strategy-card[data-strategy="${currentStrategy}"]`);
+                if (activeCard) {
+                    activeCard.classList.add('active');
+                }
+            }, 100);
+            
+            console.log(`🎯 Estratégia restaurada: ${STRATEGIES[currentStrategy].name}`);
         }
         
         // 💰 Restaurar Stake
@@ -949,9 +978,11 @@ function restoreUserSettings() {
         // 📊 Restaurar Stop Loss
         if (settings.stopLossType) {
             stopLossType = settings.stopLossType;
-            toggleRiskType('stopLoss', stopLossType);
+            maxDailyLossType = settings.stopLossType; // Sincronizar com variável global
+            toggleRiskType('stopLoss', stopLossType, true); // silent = true
         }
         if (settings.stopLossPercent) {
+            maxDailyLossPercent = parseFloat(settings.stopLossPercent);
             const el = document.getElementById('maxLossPercent');
             if (el) {
                 el.value = settings.stopLossPercent;
@@ -959,6 +990,7 @@ function restoreUserSettings() {
             }
         }
         if (settings.stopLossValue) {
+            maxDailyLossValue = parseFloat(settings.stopLossValue);
             const el = document.getElementById('maxLossFixed');
             if (el) el.value = settings.stopLossValue;
         }
@@ -966,9 +998,11 @@ function restoreUserSettings() {
         // 📈 Restaurar Stop Win
         if (settings.stopWinType) {
             stopWinType = settings.stopWinType;
-            toggleRiskType('stopWin', stopWinType);
+            maxDailyProfitType = settings.stopWinType; // Sincronizar com variável global
+            toggleRiskType('stopWin', stopWinType, true); // silent = true
         }
         if (settings.stopWinPercent) {
+            maxDailyProfitPercent = parseFloat(settings.stopWinPercent);
             const el = document.getElementById('maxWinPercent');
             if (el) {
                 el.value = settings.stopWinPercent;
@@ -976,6 +1010,7 @@ function restoreUserSettings() {
             }
         }
         if (settings.stopWinValue) {
+            maxDailyProfitValue = parseFloat(settings.stopWinValue);
             const el = document.getElementById('maxWinFixed');
             if (el) el.value = settings.stopWinValue;
         }
@@ -983,6 +1018,7 @@ function restoreUserSettings() {
         // 🏦 Restaurar tipo de conta
         if (settings.accountType) {
             accountType = settings.accountType;
+            currentAccountType = settings.accountType; // Sincronizar com variável global
             selectAccountType(accountType);
         }
         
@@ -4200,15 +4236,21 @@ window.onload = () => {
     loadConfig();
     loadSessionHistory(); // 🆕 Carregar histórico de sessões
     
-    // 💾 Restaurar configurações salvas do usuário
+    // � Carregar estratégias externas PRIMEIRO
     setTimeout(() => {
-        restoreUserSettings();
+        loadExternalStrategies();
+        
+        // �💾 Restaurar configurações DEPOIS que estratégias externas carregarem
+        setTimeout(() => {
+            restoreUserSettings();
+        }, 300); // 300ms após carregar estratégias externas
+        
     }, 200);
     
     // 🔄 Configurar auto-save
     setTimeout(() => {
         setupAutoSave();
-    }, 300);
+    }, 600);
     
     // 🆕 Adicionar listener para atualizar stake manual em tempo real
     const manualStakeInput = document.getElementById('manualStake');
@@ -4220,11 +4262,6 @@ window.onload = () => {
             }
         });
     }
-    
-    // 💎 Carregar estratégias externas
-    setTimeout(() => {
-        loadExternalStrategies();
-    }, 500);
     
     log('🚀 Champion Bot Web v2.0 carregado!', 'info');
     log('💡 Clique em Configurações para começar', 'info');

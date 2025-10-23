@@ -1,4 +1,4 @@
-@echo off
+if (!isRunning) return;@echo off
 echo ========================================
 echo 🚀 Champion Bot Web - Servidor Local
 echo ========================================
